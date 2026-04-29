@@ -7,7 +7,6 @@ import java.time.temporal.TemporalAdjusters;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import main.model.HomeCardData;
-import main.model.PopupItem;
 import main.model.Schedule;
 import main.service.HomeService;
 import main.service.ScheduleService;
@@ -16,8 +15,6 @@ import main.ui.components.Header;
 import main.ui.components.ReactivePanel;
 import main.ui.components.ScrollableTable;
 import main.ui.components.SummaryCards;
-import main.ui.dialogs.AdminDialogSupport;
-import main.ui.dialogs.ScheduleDialog;
 import main.store.DataTopics;
 
 public final class HomePanel extends ReactivePanel {
@@ -202,36 +199,22 @@ public final class HomePanel extends ReactivePanel {
     
     private ScrollableTable createTable() {
         ScrollableTable table = new ScrollableTable(
-            "Barangay", "Team", "Date", "Time", "Status", "Action"
+            "Barangay", "Team", "Date", "Time", "Status"
         );
 
         java.util.List<Schedule> schedules = scheduleService.getAllSchedules();
         
         schedules.forEach((s) -> {
-            java.util.List<PopupItem> actions = new java.util.ArrayList<>();
-            actions.add(new PopupItem("Edit", "Open schedule form", () -> openScheduleDialog(s)));
-
-            table.addRowWithAction(
+            table.addRow(
                     s.getBarangayName(),
                     s.getCollectorTeam(),
                     s.getDate(),
                     s.getTime(),
-                    s.getStatus(),
-                    actions
+                    s.getStatus()
             );
         });
 
         return table;
-    }
-
-    private void openScheduleDialog(Schedule schedule) {
-        Frame frame = AdminDialogSupport.resolveFrame(this);
-        if (ScheduleDialog.showDialog(frame, schedule)) {
-            AdminDialogSupport.showSuccess(this, schedule == null
-                    ? "Schedule saved successfully."
-                    : "Schedule updated successfully.");
-            refreshPanel();
-        }
     }
 
     private void refreshPanel() {

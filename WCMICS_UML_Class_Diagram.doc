@@ -1,0 +1,192 @@
+{\rtf1\ansi\deff0
+{\fonttbl{\f0 Calibri;}{\f1 Courier New;}}
+\landscape\paperw15840\paperh12240\margl720\margr720\margt720\margb720
+\viewkind4\uc1
+\f0\fs32\b WCMICS UML Class Diagram\par
+\fs22\b0 Based on classes found under main.app, main.ui, main.service, main.dao, main.model, and main.database in the current WCMICS project.\par
+The diagram is split into three focused UML views so the system stays readable inside one document.\par
+\par
+\b Legend:\b0  *-- composition   o-- aggregation   --> association/use   ..> dependency\par
+\par
+\b 1. Application Flow View\b0\par
+\f1\fs18
++----------------------+     *--     +----------------------+\par
+| MainFrame            |------------>| AppRouter            |\par
+| - root : JPanel      |             | - container : JPanel |\par
+| - layout : CardLayout|             | - layout : CardLayout|\par
+| - auth : AuthService |             | + register(name,view)|\par
+| + setupRoutes()      |             | + navigate(route)    |\par
+| + main()             |             +----------+-----------+\par
++----------+-----------+                        ^\par
+           | registers                          |\par
+           |                                    |\par
+           +--> WelcomePage                     |\par
+           +--> LoginPanel .......... uses .....+\par
+           +--> SignupPanel ......... uses .....+\par
+           +--> Menro\par
+           +--> Barangay\par
+\par
++----------------------+     ..>     +----------------------+\par
+| LoginPanel           |------------>| UserSession          |\par
+| + performLogin()     |             | <<static>>           |\par
+|                      |             | + startSession()     |\par
+|                      |             | + logout()           |\par
++----------+-----------+             +----------------------+\par
+           |\par
+           | uses\par
+           v\par
++----------------------+     -->     +----------------------+\par
+| AuthService          |------------>| AccountDao           |\par
+| - dao : AccountDao   |             | - conn : Connection  |\par
+| + login()            |             | + findByEmail()      |\par
+| + register()         |             | + findById()         |\par
+| + changePassword()   |             | + updateLastLogin()  |\par
++----------------------+             +----------+-----------+\par
+                                                |\par
+                                                v\par
+                                         +------------------+\par
+                                         | Account          |\par
+                                         | accountId        |\par
+                                         | name, email      |\par
+                                         | role, status     |\par
+                                         | barangayId       |\par
+                                         +------------------+\par
+\par
++----------------------+     o--     +----------------------+\par
+| Menro                |------------>| Sidebar              |\par
+| + main()             |             | + actionPerformed()  |\par
++----------+-----------+             +----------+-----------+\par
+           | *-- admin.HomePanel                |\par
+           | *-- SchedulePanel                  | --> AppRouter\par
+           | *-- ManagementPanel                |\par
+           | *-- admin.BarangayPanel            v\par
+           | *-- UsersPanel              +----------------------+\par
+           | *-- admin.SettingsPanel     | Header               |\par
+           |                              | ..> HeaderService    |\par
+           |                              | ..> UserSession      |\par
+           |                              +----------------------+\par
+\par
++----------------------+     o--     +----------------------+\par
+| Barangay             |------------>| Sidebar              |\par
+| + main()             |             +----------------------+\par
++----------+-----------+\par
+           | *-- officials.HomePanel\par
+           | *-- ReportsPanel\par
+           | *-- officials.SettingsPanel\par
+           v\par
+     +----------------------+\par
+     | Header               |\par
+     +----------------------+\par
+\f0\fs22\par
+Notes:\par
+- MainFrame boots authentication, registers the welcome/login/signup routes, and opens Menro or Barangay based on Account.role.\par
+- LoginPanel updates UserSession after a successful AuthService.login call.\par
+- Shared UI building blocks are AppRouter, Sidebar, and Header.\par
+- Key panel-service links in the MENRO dashboard are: admin.HomePanel ..> HomeService and ScheduleService, SchedulePanel ..> ScheduleService, ManagementPanel ..> PersonnelService, TeamService, and TruckService, admin.BarangayPanel ..> ReportService, ComplaintService, and RequestService, UsersPanel ..> AccountDao, and admin.SettingsPanel ..> AccountDao, AuthService, and UserSession.\par
+\page
+\b 2. Service And DAO View\b0\par
+\f1\fs18
++----------------------+    -->    +----------------------+    -->    +----------------------+\par
+| AuthService          |---------->| AccountDao           |---------->| Account              |\par
+| BarangayService      |---------->| BarangayDao          |---------->| Barangay             |\par
+| PersonnelService     |---------->| PersonnelDao         |---------->| Personnel            |\par
+| TeamService          |---------->| TeamDao              |---------->| Team                 |\par
+| TruckService         |---------->| TruckDao             |---------->| Truck                |\par
+| ScheduleService      |---------->| ScheduleDao          |---------->| Schedule             |\par
+| ReportService        |---------->| ReportDao            |---------->| Report               |\par
+| ComplaintService     |---------->| ComplaintDao         |---------->| Complaint            |\par
+| RequestService       |---------->| RequestDao           |---------->| Request              |\par
++----------------------+           +----------------------+           +----------------------+\par
+\par
++----------------------+    -->    +----------------------+    -->    +----------------------+\par
+| HomeService          |---------->| HomeDao              |---------->| HomeCardData         |\par
++----------------------+           +----------------------+           +----------------------+\par
+\par
++----------------------+    -->    +----------------------+    -->    +----------------------+\par
+| HeaderService        |---------->| NotificationDao      |---------->| NotificationSummary  |\par
+| + build...Items()    |           | + fetchSummary()     |           +----------------------+\par
+| ..> PopupItem        |           +----------------------+\par
++----------------------+\par
+\par
+SQLConnection ..> AccountDao, BarangayDao, PersonnelDao, TeamDao, TruckDao,\par
+                 ScheduleDao, ReportDao, ComplaintDao, RequestDao,\par
+                 HomeDao, NotificationDao\par
+\par
+DbSchemaHelper ..> AccountDao, TeamDao, NotificationDao\par
+\f0\fs22\par
+Notes:\par
+- Most services are thin business wrappers around one DAO and one main model class.\par
+- TeamDao is the richest DAO because it synchronizes team, truck, and personnel assignments.\par
+- ScheduleDao joins barangay, barangay_admin, team, and schedule data into one Schedule view model.\par
+- HeaderService builds PopupItem collections for the shared Header notification and account menus.\par
+\page
+\b 3. Core Domain View\b0\par
+\f1\fs18
++----------------------+   0..* assignedTo   0..1   +----------------------+\par
+| Account              |--------------------------->| Barangay             |\par
+| accountId            |                            | barangayId           |\par
+| name                 |                            | barangayName         |\par
+| email                |                            | collectionDay        |\par
+| role                 |                            | contact              |\par
+| status               |                            +----------------------+\par
++----------------------+\par
+\par
++----------------------+   1 leader          1      +----------------------+\par
+| Team                 |--------------------------->| Personnel            |\par
+| id                   |   0..1 driver       1      | id                   |\par
+| teamName             |--------------------------->| fullName             |\par
+| leaderId             |   0..* collectors   1      | role                 |\par
+| driverId             |--------------------------->| status               |\par
+| truckId              |                            | team                 |\par
+| collectorIds [*]     |                            +----------------------+\par
++----------+-----------+\par
+           |\par
+           | 0..1 assignedTruck\par
+           v\par
+     +----------------------+\par
+     | Truck                |\par
+     | id                   |\par
+     | plateNumber          |\par
+     | truckType            |\par
+     | status               |\par
+     | assignedTeam         |\par
+     +----------------------+\par
+\par
++----------------------+   1 collectionFor   1      +----------------------+\par
+| Schedule             |--------------------------->| Barangay             |\par
+| id                   |   0..1 servedBy     1      +----------------------+\par
+| barangayName         |--------------------------->| Team                 |\par
+| collectorTeam        |                            +----------------------+\par
+| date                 |\par
+| time                 |\par
+| status               |\par
++----------------------+\par
+\par
++----------------------+   0..* filedFor     1      +----------------------+\par
+| Report               |--------------------------->| Barangay             |\par
+| reportId             |                            +----------------------+\par
+| barangayId           |\par
+| status               |\par
+| isRead               |\par
+| createdAt            |\par
++----------------------+\par
+\par
++----------------------+          +----------------------+\par
+| Complaint            |          | Request              |\par
+| complaintId          |          | requestId            |\par
+| message              |          | message              |\par
+| location             |          | location             |\par
+| status               |          | status               |\par
+| isRead               |          | isRead               |\par
++----------------------+          +----------------------+\par
+\par
+HomeCardData ..> derived from Schedule and Complaint counts\par
+NotificationSummary ..> derived from Barangay, Schedule, and Report counts\par
+\f0\fs22\par
+Notes:\par
+- Team is the central operational entity because it binds personnel roles and one truck.\par
+- Schedule represents a joined planning view rather than a fully normalized entity with foreign-key fields inside the model class.\par
+- Complaint and Request currently store location as text, while Report is directly linked to Barangay through barangayId.\par
+\par
+\b End of document\b0\par
+}
