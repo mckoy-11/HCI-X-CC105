@@ -2,16 +2,16 @@ package main.ui;
 
 import java.awt.*;
 
-import main.ui.admin_sections.HomePanel;
-import main.ui.admin_sections.SchedulePanel;
-import main.ui.admin_sections.BarangayPanel;
-import main.ui.admin_sections.UsersPanel;
-import main.ui.admin_sections.SettingsPanel;
+import main.ui.admin_pages.HomePanel;
+import main.ui.admin_pages.SchedulePanel;
+import main.ui.admin_pages.BarangayPanel;
+import main.ui.admin_pages.UsersPanel;
+import main.ui.admin_pages.SettingsPanel;
 
 import main.ui.components.Sidebar;
 
 import javax.swing.*;
-import main.ui.admin_sections.Management;
+import main.ui.admin_pages.Management;
 
 public final class Menro extends JFrame {
 

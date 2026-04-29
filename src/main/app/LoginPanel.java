@@ -14,6 +14,7 @@ import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.sql.Connection;
+import java.sql.SQLException;
 
 import static main.style.SystemStyle.*;
 
@@ -54,7 +55,7 @@ public class LoginPanel extends JPanel {
         AuthLayout authLayout = new AuthLayout(
                 "Secure access",
                 "Pick up where operations left off.",
-                "Sign in to the workspace used for schedule coordination, requests, reports, and collection visibility.",
+                "<html>Sign in to the workspace used for schedule <br> coordination, requests, reports, and collection visibility.</html>",
                 "Shared spacing keeps the login flow readable at a glance.",
                 "The layout stays centered so no extra scrolling is needed.",
                 "MENRO and barangay users move through the same polished entry point."
@@ -83,15 +84,12 @@ public class LoginPanel extends JPanel {
         emailField.setToolTipText("Enter your email address");
         passField.setToolTipText("Enter your password");
 
-        JLabel badge = createCapsuleLabel("MENRO and Barangay Login", BGCOLOR2, TEXTCOLOR);
-
         form.add(back);
-        form.add(Box.createVerticalStrut(18));
-        form.add(badge);
         form.add(Box.createVerticalStrut(18));
         form.add(createFormTitle("Welcome back"));
         form.add(Box.createVerticalStrut(12));
-        form.add(createFormSubtitle("Sign in to continue managing requests, schedules, collection updates, and responses."));
+        form.add(createFormSubtitle(
+                "<html>Sign in to continue managing requests, schedules,<br> collection updates, and responses.<html>"));
         form.add(Box.createVerticalStrut(30));
         form.add(createFieldGroup("Email address", emailField));
         form.add(Box.createVerticalStrut(16));
@@ -131,7 +129,7 @@ public class LoginPanel extends JPanel {
             try {
                 Connection conn = SQLConnection.getConnection();
                 authService = new AuthService(new AccountDao(conn));
-            } catch (Exception e) {
+            } catch (SQLException e) {
                 showError(statusLabel, "Unable to connect to the database.");
                 return;
             }

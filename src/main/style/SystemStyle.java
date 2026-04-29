@@ -88,8 +88,8 @@ public final class SystemStyle {
     public static final Color ERROR_TEXT = new Color(197, 62, 92);
     public static final Color SUCCESS_TEXT = new Color(46, 150, 97);
 
-    public static final int FORM_WIDTH = 376;
-    public static final int FIELD_HEIGHT = 52;
+    public static final int FORM_WIDTH = 400;
+    public static final int FIELD_HEIGHT = 56;
     private static final Border EMPTY_BORDER = BorderFactory.createEmptyBorder();
 
     private SystemStyle() {
@@ -129,7 +129,7 @@ public final class SystemStyle {
     }
 
     public static JPanel createTransparentPanel() {
-        return createTransparentPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        return createTransparentPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
     }
 
     public static JPanel createTransparentPanel(LayoutManager layout) {
@@ -139,7 +139,7 @@ public final class SystemStyle {
     }
 
     public static JPanel createAuthCard() {
-        JPanel card = Card(30, 30, 30, 30, 4, 48, WHITE);
+        JPanel card = Card(30, 30, 30, 30, 2, 48, WHITE);
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
         card.setBorder(BorderFactory.createEmptyBorder(36, 36, 36, 36));
         card.setMaximumSize(new Dimension(460, Integer.MAX_VALUE));

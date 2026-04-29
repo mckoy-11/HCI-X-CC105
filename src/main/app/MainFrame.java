@@ -33,8 +33,9 @@ public class MainFrame extends JFrame {
 
         setupFrame();
         setupRoutes();
-
-        setContentPane(root);
+        
+        setLayout(new BorderLayout());
+        add(root, BorderLayout.CENTER);
         setVisible(true);
     }
 
@@ -55,8 +56,8 @@ public class MainFrame extends JFrame {
 
     private void setupFrame() {
         setTitle("WASTELY");
-        setSize(1180, 760);
-        setMinimumSize(new Dimension(1180, 760));
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
+        setMinimumSize(new Dimension(900, 600));
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
     }

@@ -1,4 +1,4 @@
-package main.ui.admin_sections;
+package main.ui.admin_pages;
 
 import java.awt.*;
 import java.awt.event.ItemEvent;

@@ -83,8 +83,6 @@ public class SignupPanel extends JPanel {
 
         form.add(backBtn);
         form.add(Box.createVerticalStrut(18));
-        form.add(createCapsuleLabel("Barangay Account Setup", BGCOLOR2, TEXTCOLOR));
-        form.add(Box.createVerticalStrut(18));
         form.add(createFormTitle("Create your account"));
         form.add(Box.createVerticalStrut(12));
         form.add(createFormSubtitle("Add your details below to start using WASTELY."));

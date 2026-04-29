@@ -61,12 +61,10 @@ public class WelcomePage extends JPanel {
         quickRow.add(createStat("24/7", "Collection visibility"));
         quickRow.add(createStat("Live", "Request tracking"));
 
-        JLabel note = createFormSubtitle("Choose how you want to enter the system. Everything stays on one screen for a cleaner start.");
+        JLabel note = createFormSubtitle("<html>Choose how you want to enter the system. <br> Everything stays on one screen for a cleaner start.<html>");
         note.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         form.setBorder(BorderFactory.createEmptyBorder(4, 0, 4, 0));
-        form.add(createCapsuleLabel("Welcome", BGCOLOR2, main.style.SystemStyle.TEXTCOLOR));
-        form.add(Box.createVerticalStrut(18));
         form.add(createFormTitle("Welcome back"));
         form.add(Box.createVerticalStrut(12));
         form.add(note);

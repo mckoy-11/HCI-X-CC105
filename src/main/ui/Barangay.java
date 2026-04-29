@@ -2,9 +2,9 @@ package main.ui;
 
 import java.awt.*;
 
-import main.ui.officials_sections.HomePanel;
-import main.ui.officials_sections.ReportsPanel;
-import main.ui.officials_sections.SettingsPanel;
+import main.ui.officials_pages.HomePanel;
+import main.ui.officials_pages.ReportsPanel;
+import main.ui.officials_pages.SettingsPanel;
 
 import main.ui.components.Sidebar;
 import javax.swing.*;

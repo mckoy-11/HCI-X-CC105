@@ -1,4 +1,4 @@
-package main.ui.officials_sections;
+package main.ui.officials_pages;
 
 import java.awt.BorderLayout;
 import java.awt.Color;

@@ -16,6 +16,7 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.SwingConstants;
 import static main.style.SystemStyle.BACKGROUND;
 import static main.style.SystemStyle.BGCOLOR1;
 import static main.style.SystemStyle.BGCOLOR2;
@@ -38,9 +39,8 @@ public class AuthLayout extends JPanel {
         setLayout(new BorderLayout());
         setBackground(BACKGROUND);
 
-        JPanel viewport = createTransparentPanel(new GridBagLayout());
-        viewport.setBorder(BorderFactory.createEmptyBorder(32, 32, 32, 32));
-        viewport.add(buildShell(tagLine, headline, description, highlights));
+        JPanel viewport = createTransparentPanel(new BorderLayout());
+        viewport.add(buildShell(tagLine, headline, description, highlights), BorderLayout.CENTER);
 
         add(viewport, BorderLayout.CENTER);
     }
@@ -50,12 +50,21 @@ public class AuthLayout extends JPanel {
     }
 
     private JPanel buildShell(String tagLine, String headline, String description, String[] highlights) {
-        JPanel shell = createTransparentPanel(new GridLayout(1, 2, 0, 0));
-        shell.setPreferredSize(new Dimension(1040, 620));
-        shell.setMaximumSize(new Dimension(1040, 620));
+        JPanel shell = createTransparentPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridy = 0;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.weighty = 1;
+        
+        // LEFT PANEL
+        gbc.gridx = 0;
+        gbc.weightx = 0.5;
+        shell.add(buildInfoPanel(tagLine, headline, description, highlights), gbc);
 
-        shell.add(buildInfoPanel(tagLine, headline, description, highlights));
-        shell.add(buildFormPanel());
+        // RIGHT PANEL
+        gbc.gridx = 1;
+        gbc.weightx = 0.5;
+        shell.add(buildFormPanel(), gbc);
         return shell;
     }
 
@@ -87,9 +96,9 @@ public class AuthLayout extends JPanel {
         eyebrow.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel brand = new JLabel("WASTELY");
-        brand.setFont(TITLEBOLD.deriveFont(18f));
+        brand.setFont(TITLEBOLD.deriveFont(50f));
         brand.setForeground(new java.awt.Color(37, 43, 70));
-        brand.setAlignmentX(Component.LEFT_ALIGNMENT);
+        brand.setHorizontalAlignment(SwingConstants.CENTER);
 
         JLabel title = new JLabel(toHtml(headline, 360));
         title.setFont(TITLEBOLD.deriveFont(40f));
@@ -117,24 +126,20 @@ public class AuthLayout extends JPanel {
             }
         }
 
-        panel.add(Box.createVerticalGlue());
         return panel;
     }
 
     private JPanel buildFormPanel() {
         JPanel wrapper = createTransparentPanel(new GridBagLayout());
+        wrapper.setBorder(BorderFactory.createEmptyBorder(40, 40, 40, 40));
         wrapper.setBackground(WHITE);
         wrapper.setOpaque(true);
-
-        JPanel card = createAuthCard();
-        card.setPreferredSize(new Dimension(440, 520));
 
         formContent.setLayout(new BoxLayout(formContent, BoxLayout.Y_AXIS));
         formContent.setAlignmentX(Component.LEFT_ALIGNMENT);
         formContent.setMaximumSize(new Dimension(FORM_WIDTH, Integer.MAX_VALUE));
 
-        card.add(formContent);
-        wrapper.add(card, centeredConstraints());
+        wrapper.add(formContent, centeredConstraints());
         return wrapper;
     }
 
@@ -143,6 +148,7 @@ public class AuthLayout extends JPanel {
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.insets = new Insets(0, 0, 0, 0);
+        
         return gbc;
     }
 
