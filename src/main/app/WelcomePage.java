@@ -3,6 +3,7 @@ package main.app;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.FlowLayout;
+import java.awt.GridLayout;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -56,7 +57,7 @@ public class WelcomePage extends JPanel {
         JButton loginButton = createSecondaryButton("Log In");
         loginButton.addActionListener(e -> runAction(onLogin));
 
-        JPanel quickRow = createTransparentPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        JPanel quickRow = createTransparentPanel(new GridLayout(1, 2, 5, 0));
         quickRow.setAlignmentX(Component.LEFT_ALIGNMENT);
         quickRow.add(createStat("24/7", "Collection visibility"));
         quickRow.add(createStat("Live", "Request tracking"));
@@ -78,7 +79,7 @@ public class WelcomePage extends JPanel {
     }
 
     private JPanel createStat(String value, String label) {
-        JPanel panel = Card(18, BGCOLOR2);
+        JPanel panel = Card(12, BGCOLOR2);
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBorder(BorderFactory.createEmptyBorder(14, 18, 14, 18));
         panel.setAlignmentY(Component.TOP_ALIGNMENT);

@@ -241,5 +241,8 @@ public class SignupPanel extends JPanel {
         if (action != null) {
             action.run();
         }
+        if (action == onLogin || action == onBack) {
+            clearStatus(statusLabel);
+        }
     }
 }

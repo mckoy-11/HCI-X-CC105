@@ -58,7 +58,7 @@ public final class SystemStyle {
 
     public static Color backgroundColor = new Color(246, 247, 251);
     public static Color cardBackground = Color.WHITE;
-    public static Color PRIMARY = new Color(80, 99, 255);
+    public static Color PRIMARY = Color.decode("#287C27");
     public static Color secondaryGreen = new Color(224, 229, 255);
     public static Color textDark = new Color(24, 28, 42);
     public static Color textMuted = new Color(111, 118, 144);
@@ -83,8 +83,8 @@ public final class SystemStyle {
     public static final Color INPUT_BACKGROUND = new Color(244, 246, 251);
     public static final Color INPUT_BACKGROUND_FOCUS = new Color(238, 242, 255);
     public static final Color MUTED_TEXT = new Color(109, 116, 139);
-    public static final Color INFO_GRADIENT_TOP = new Color(248, 249, 255);
-    public static final Color INFO_GRADIENT_BOTTOM = new Color(236, 240, 255);
+    public static final Color INFO_GRADIENT_TOP = Color.decode("#D6F5CC");
+    public static final Color INFO_GRADIENT_BOTTOM = Color.decode("#F0F7EE");
     public static final Color ERROR_TEXT = new Color(197, 62, 92);
     public static final Color SUCCESS_TEXT = new Color(46, 150, 97);
 

@@ -81,7 +81,7 @@ public class AuthLayout extends JPanel {
 
                 g2.setColor(new java.awt.Color(255, 255, 255, 115));
                 g2.fillOval(getWidth() - 240, -70, 260, 260);
-                g2.setColor(new java.awt.Color(PRIMARY.getRed(), PRIMARY.getGreen(), PRIMARY.getBlue(), 24));
+                g2.setColor(new java.awt.Color(PRIMARY.getRed(), PRIMARY.getGreen(), 24, PRIMARY.getBlue()));
                 g2.fillOval(-120, getHeight() - 180, 260, 260);
                 g2.dispose();
             }

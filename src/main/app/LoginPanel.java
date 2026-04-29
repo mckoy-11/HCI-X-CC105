@@ -187,5 +187,8 @@ public class LoginPanel extends JPanel {
         if (action != null) {
             action.run();
         }
+        if (action == onSignup || action == onBack) {
+            clearStatus(statusLabel);
+        }
     }
 }
