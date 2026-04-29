@@ -21,11 +21,13 @@ import main.service.HeaderService;
 import static main.style.SystemStyle.PlainBtn;
 import static main.style.SystemStyle.TEXTCOLOR;
 import static main.style.SystemStyle.WHITE;
+import main.ui.dialogs.SearchDialog;
 
 public class Header extends JPanel {
 
     private final HeaderService headerService = new HeaderService();
-
+    private SearchDialog searchDialog;
+    
     public Header(String title) {
         setBackground(WHITE);
         setLayout(new BorderLayout());
@@ -40,6 +42,13 @@ public class Header extends JPanel {
 
         SearchBar searchBar = new SearchBar(25, "Search...");
         searchBar.setPreferredSize(new Dimension(350, 40));
+
+        // create ONE dialog instance
+        searchDialog = new SearchDialog(searchBar, null, null);
+
+        // attach dialog to search bar
+        searchBar.attachSearchDialog(searchDialog);
+
         installSearch(searchBar);
 
         JPanel centerPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 5));
@@ -61,32 +70,24 @@ public class Header extends JPanel {
     }
 
     private void installSearch(SearchBar searchBar) {
-        Timer timer = new Timer(250, event -> performSearch(searchBar));
+        Timer timer = new Timer(250, event -> {
+            String query = searchBar.getText().trim();
+
+            if (searchDialog != null) {
+                searchDialog.updateQuery(query);
+            }
+        });
+
         timer.setRepeats(false);
 
         searchBar.onSearch(event -> {
             timer.stop();
-            performSearch(searchBar);
+            searchDialog.updateQuery(searchBar.getText());
         });
+
         searchBar.onType(timer::restart);
     }
-
-    private void performSearch(SearchBar searchBar) {
-        String query = searchBar.getText().trim();
-        if (query.isEmpty() || "Search...".equalsIgnoreCase(query)) {
-            return;
-        }
-
-        Component root = SwingUtilities.getRoot(this);
-        JOptionPane.showMessageDialog(
-                root,
-                "Search is available as a quick command placeholder for now.\nQuery: " + query,
-                "Search",
-                JOptionPane.INFORMATION_MESSAGE
-        );
-        searchBar.clear();
-    }
-
+    
     private void showNotifications(Component anchor) {
         PopupUI.show(anchor, headerService.buildNotificationItems(() -> showNotifications(anchor)));
     }

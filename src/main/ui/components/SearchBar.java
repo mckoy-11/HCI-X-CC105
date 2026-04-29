@@ -1,5 +1,7 @@
 package main.ui.components;
 
+import main.ui.dialogs.SearchDialog;
+
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
@@ -16,7 +18,7 @@ public final class SearchBar extends JPanel {
 
     private final String placeholder;
 
-    private boolean showClearButton = false;
+    private SearchDialog searchDialog;
 
     public SearchBar(int radius, String placeholder) {
         this.placeholder = placeholder;
@@ -26,97 +28,65 @@ public final class SearchBar extends JPanel {
         setBorder(BorderFactory.createEmptyBorder(5, 12, 5, 12));
 
         field = new JTextField();
-        field.setBorder(null);
         field.setOpaque(false);
+        field.setBorder(null);
+        field.setBackground(new Color(0, 0, 0, 0));
         field.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        field.setForeground(Color.BLACK);
 
         icon = new JLabel(loadIcon("search.png", 18));
-
+        icon.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 4));
+        
         clearBtn = new JLabel(loadIcon("close.png", 14));
+        clearBtn.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 4));
         clearBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         clearBtn.setVisible(false);
-        clearBtn.setFocusable(false);
 
         initListeners();
 
         add(icon, BorderLayout.WEST);
         add(field, BorderLayout.CENTER);
         add(clearBtn, BorderLayout.EAST);
-        
+
+        installGlobalShortcut();
         installClickOutsideToUnfocus(this);
     }
 
-    // =========================
-    // Initialization
-    // =========================
+    public void attachSearchDialog(SearchDialog dialog) {
+        this.searchDialog = dialog;
+    }
+
     private void initListeners() {
 
-        // typing updates
         field.getDocument().addDocumentListener(new DocumentListener() {
-            @Override public void insertUpdate(DocumentEvent e) { updateState(); }
-            @Override public void removeUpdate(DocumentEvent e) { updateState(); }
-            @Override public void changedUpdate(DocumentEvent e) { updateState(); }
+            @Override public void insertUpdate(DocumentEvent e) { update(); }
+            @Override public void removeUpdate(DocumentEvent e) { update(); }
+            @Override public void changedUpdate(DocumentEvent e) { update(); }
         });
 
-        // focus repaint (for placeholder rendering)
-        field.addFocusListener(new FocusAdapter() {
-            @Override
-            public void focusGained(FocusEvent e) {
-                repaint();
-            }
-
-            @Override
-            public void focusLost(FocusEvent e) {
-                SwingUtilities.invokeLater(() -> repaint());
+        field.addActionListener(e -> {
+            if (searchDialog != null) {
+                searchDialog.openFromEnter(getText());
             }
         });
 
-        // clear button
         clearBtn.addMouseListener(new MouseAdapter() {
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-                e.consume();
-            }
-
             @Override
             public void mouseClicked(MouseEvent e) {
                 field.setText("");
-                updateState();
-
-                SwingUtilities.invokeLater(() -> {
-                    field.requestFocusInWindow();
-                });
+                update();
+                field.requestFocusInWindow();
             }
         });
-    }
+        
+        addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                setBackground(new Color(248, 248, 248));
+            }
 
-    // =========================
-    // State
-    // =========================
-    private void updateState() {
-        showClearButton = !field.getText().isEmpty();
-        clearBtn.setVisible(showClearButton);
-        repaint();
-    }
-
-    // =========================
-    // Public API
-    // =========================
-    public String getText() {
-        return field.getText().trim();
-    }
-
-    public void clear() {
-        field.setText("");
-        updateState();
-    }
-
-    public void onSearch(ActionListener action) {
-        field.addActionListener(e -> {
-            if (!getText().isEmpty()) {
-                action.actionPerformed(e);
+            @Override
+            public void mouseExited(MouseEvent e) {
+                setBackground(new Color(255, 255, 255));
             }
         });
     }
@@ -129,6 +99,87 @@ public final class SearchBar extends JPanel {
         });
     }
 
+    public void onSearch(ActionListener action) {
+        field.addActionListener(e -> action.actionPerformed(e));
+    }
+
+    private void installGlobalShortcut() {
+
+        KeyboardFocusManager.getCurrentKeyboardFocusManager()
+                .addKeyEventDispatcher(e -> {
+
+                    if (e.getID() != KeyEvent.KEY_PRESSED) return false;
+
+                    // "/" key focus search
+                    if (e.getKeyChar() == '/' && !field.hasFocus()) {
+                        SwingUtilities.invokeLater(() -> {
+                            field.requestFocusInWindow();
+                            field.setText("");
+                        });
+                        return true;
+                    }
+
+                    // ENTER triggers search dialog update
+                    if (e.getKeyCode() == KeyEvent.VK_ENTER && field.hasFocus()) {
+                        if (searchDialog != null) {
+                            searchDialog.updateQuery(getText());
+                        }
+                    }
+
+                    return false;
+                });
+    }
+
+    private void update() {
+        clearBtn.setVisible(!field.getText().isEmpty());
+
+        if (searchDialog != null) {
+            searchDialog.updateQuery(getText());
+        }
+
+        repaint();
+    }
+
+    public String getText() {
+        return field.getText().trim();
+    }
+
+    public JTextField getField() {
+        return field;
+    }
+    
+    public void installClickOutsideToUnfocus(JComponent root) { 
+        // Use AWTEventListener to catch mouse clicks globally 
+        Toolkit.getDefaultToolkit().addAWTEventListener((AWTEvent event) -> {
+            if (event instanceof MouseEvent && event.getID() == MouseEvent.MOUSE_PRESSED) { 
+                
+                // Only process if component is showing on screen 
+                if (!root.isShowing()) return; MouseEvent me = (MouseEvent) event; 
+                
+                // Only process clicks that are within the root component's bounds 
+                Point rootLoc = root.getLocationOnScreen(); 
+                
+                int rootX = rootLoc.x; 
+                int rootY = rootLoc.y; 
+                
+                int rootW = root.getWidth(); 
+                int rootH = root.getHeight(); 
+                int clickX = me.getXOnScreen(); 
+                int clickY = me.getYOnScreen(); 
+                
+                // Check if click is outside the search bar bounds 
+                boolean outside = clickX < rootX || 
+                                  clickX > rootX + rootW || 
+                                  clickY < rootY || 
+                                  clickY > rootY + rootH; 
+                if (outside) {KeyboardFocusManager
+                    .getCurrentKeyboardFocusManager().clearGlobalFocusOwner(); 
+                } 
+            } 
+        }, AWTEvent.MOUSE_EVENT_MASK); 
+    }
+
+    
     @Override
     protected void paintComponent(Graphics g) {
         Graphics2D g2 = (Graphics2D) g.create();
@@ -136,59 +187,16 @@ public final class SearchBar extends JPanel {
 
         int w = getWidth();
         int h = getHeight();
-        int radius = 20;
 
-        // shadow
-        for (int i = 0; i < 6; i++) {
-            g2.setColor(new Color(0, 0, 0, 15 - i * 2));
-            g2.fillRoundRect(i, i, w - i * 2, h - i * 2, radius, radius);
-        }
+        // background (flat)
+        g2.setColor(new Color(255, 255, 255));
+        g2.fillRoundRect(0, 0, w, h, 35, 35);
+
+        // subtle border
+        g2.setColor(new Color(225, 225, 225));
+        g2.drawRoundRect(0, 0, w - 1, h - 1, 35, 35);
         
-        // background
-        g2.setColor(new Color(250, 250, 250));
-        g2.fillRoundRect(0, 0, w - 4, h - 4, radius, radius);
-
-        // placeholder (ONLY when empty)
-        if (field.getText().isEmpty() && !field.hasFocus()) {
-            g2.setColor(Color.GRAY);
-            FontMetrics fm = g2.getFontMetrics(field.getFont());
-            int x = icon.getWidth() + 20;
-            int y = (h - fm.getHeight()) / 2 + fm.getAscent();
-            g2.setFont(field.getFont());
-            g2.drawString(placeholder, x, y);
-        }
-
         g2.dispose();
         super.paintComponent(g);
-    }
-    
-    public void installClickOutsideToUnfocus(JComponent root) {
-        // Use AWTEventListener to catch mouse clicks globally
-        Toolkit.getDefaultToolkit().addAWTEventListener((AWTEvent event) -> {
-            if (event instanceof MouseEvent && event.getID() == MouseEvent.MOUSE_PRESSED) {
-                // Only process if component is showing on screen
-                if (!root.isShowing()) return;
-                
-                MouseEvent me = (MouseEvent) event;
-                // Only process clicks that are within the root component's bounds
-                Point rootLoc = root.getLocationOnScreen();
-                int rootX = rootLoc.x;
-                int rootY = rootLoc.y;
-                int rootW = root.getWidth();
-                int rootH = root.getHeight();
-                
-                int clickX = me.getXOnScreen();
-                int clickY = me.getYOnScreen();
-                
-                // Check if click is outside the search bar bounds
-                boolean outside = clickX < rootX || clickX > rootX + rootW 
-                               || clickY < rootY || clickY > rootY + rootH;
-                
-                if (outside) {
-                    KeyboardFocusManager.getCurrentKeyboardFocusManager()
-                            .clearGlobalFocusOwner();
-                }
-            }
-        }, AWTEvent.MOUSE_EVENT_MASK);
     }
 }

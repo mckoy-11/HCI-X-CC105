@@ -100,7 +100,7 @@ public final class SystemStyle {
             return null;
         }
 
-        ImageIcon icon = new ImageIcon("src/main/resources/icons/" + path);
+        ImageIcon icon = new ImageIcon("src/main/assets/icons/" + path);
         if (icon.getIconWidth() <= 0 || icon.getIconHeight() <= 0) {
             return null;
         }
@@ -554,7 +554,7 @@ public final class SystemStyle {
         return blur.filter(image, null);
     }
 
-    private static Shape createRoundedShape(int width, int height, int topLeft, int topRight, int bottomRight, int bottomLeft) {
+    public static Shape createRoundedShape(int width, int height, int topLeft, int topRight, int bottomRight, int bottomLeft) {
         Path2D path = new Path2D.Double();
         path.moveTo(topLeft, 0);
         path.lineTo(width - topRight, 0);
