@@ -148,13 +148,17 @@ public final class SearchBar extends JPanel {
         return field;
     }
     
+    private AWTEventListener globalListener;
+    private Component oldFocusOwner;
+    
     public void installClickOutsideToUnfocus(JComponent root) { 
-        // Use AWTEventListener to catch mouse clicks globally 
-        Toolkit.getDefaultToolkit().addAWTEventListener((AWTEvent event) -> {
+        // Store reference to old focus owner before clearing
+        globalListener = (AWTEvent event) -> {
             if (event instanceof MouseEvent && event.getID() == MouseEvent.MOUSE_PRESSED) { 
                 
                 // Only process if component is showing on screen 
-                if (!root.isShowing()) return; MouseEvent me = (MouseEvent) event; 
+                if (!root.isShowing()) return; 
+                MouseEvent me = (MouseEvent) event; 
                 
                 // Only process clicks that are within the root component's bounds 
                 Point rootLoc = root.getLocationOnScreen(); 
@@ -172,11 +176,20 @@ public final class SearchBar extends JPanel {
                                   clickX > rootX + rootW || 
                                   clickY < rootY || 
                                   clickY > rootY + rootH; 
-                if (outside) {KeyboardFocusManager
-                    .getCurrentKeyboardFocusManager().clearGlobalFocusOwner(); 
+                if (outside) {
+                    // Don't clear focus if clicking on a JComboBox or its popup
+                    Component source = me.getComponent();
+                    if (source instanceof JComboBox || 
+                        SwingUtilities.getAncestorOfClass(JComboBox.class, source) != null ||
+                        source.getClass().getName().contains("ComboPopup")) {
+                        return; // Let JComboBox handle its own events
+                    }
+                    KeyboardFocusManager
+                        .getCurrentKeyboardFocusManager().clearGlobalFocusOwner(); 
                 } 
             } 
-        }, AWTEvent.MOUSE_EVENT_MASK); 
+        };
+        Toolkit.getDefaultToolkit().addAWTEventListener(globalListener, AWTEvent.MOUSE_EVENT_MASK); 
     }
 
     

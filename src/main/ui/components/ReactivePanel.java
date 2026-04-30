@@ -12,9 +12,8 @@ import main.store.DataChangeBus;
  */
 public abstract class ReactivePanel extends JPanel {
 
-    private final List<DataChangeBus.Subscription> subscriptions =
-            new ArrayList<DataChangeBus.Subscription>();
-    private final List<Timer> timers = new ArrayList<Timer>();
+    private final List<DataChangeBus.Subscription> subscriptions =  new ArrayList<>();
+    private final List<Timer> timers = new ArrayList<>();
 
     protected final void listen(String topic, Runnable listener) {
         subscriptions.add(DataChangeBus.subscribe(topic, listener));

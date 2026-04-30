@@ -40,6 +40,7 @@ import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.SwingConstants;
 import javax.swing.border.Border;
+import javax.swing.border.EmptyBorder;
 import javax.swing.text.JTextComponent;
 import main.ui.components.CustomButton;
 
@@ -92,8 +93,7 @@ public final class SystemStyle {
     public static final int FIELD_HEIGHT = 56;
     private static final Border EMPTY_BORDER = BorderFactory.createEmptyBorder();
 
-    private SystemStyle() {
-    }
+    private SystemStyle() {}
 
     public static ImageIcon loadIcon(String path, int size) {
         if (path == null || path.trim().isEmpty()) {
@@ -109,9 +109,9 @@ public final class SystemStyle {
         return new ImageIcon(scaled);
     }
 
-    public static JSeparator separator() {
+    public static JSeparator separator(int size) {
         JSeparator separator = new JSeparator(SwingConstants.HORIZONTAL);
-        separator.setMaximumSize(new Dimension(240, 1));
+        separator.setMaximumSize(new Dimension(size, 1));
         separator.setForeground(Color.LIGHT_GRAY);
         separator.setAlignmentX(Component.CENTER_ALIGNMENT);
         return separator;
@@ -155,6 +155,25 @@ public final class SystemStyle {
         label.setBorder(BorderFactory.createEmptyBorder(7, 12, 7, 12));
         label.setAlignmentX(Component.LEFT_ALIGNMENT);
         return label;
+    }
+    
+    public static JPanel createInfoItem(String label, String value) {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setOpaque(false);
+
+        JLabel lbl = new JLabel(label);
+        lbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lbl.setForeground(TEXTCOLOR);
+
+        JLabel val = new JLabel(value);
+        val.setFont(new Font("Segoe UI", Font.BOLD, 13));
+
+        panel.add(lbl);
+        panel.add(Box.createVerticalStrut(3));
+        panel.add(val);
+
+        return panel;
     }
 
     public static JLabel createFormTitle(String text) {

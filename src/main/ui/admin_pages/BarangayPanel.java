@@ -7,12 +7,8 @@ import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.util.ArrayList;
 import java.util.List;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import main.model.Barangay;
@@ -30,20 +26,12 @@ import static main.style.SystemStyle.Card;
 import static main.style.SystemStyle.GradientPaint;
 import static main.style.SystemStyle.SIDEBAR;
 import static main.style.SystemStyle.SUBTITLEBOLD;
-import static main.style.SystemStyle.TEXTCOLOR;
-import static main.style.SystemStyle.WHITE;
-import static main.style.SystemStyle.createFieldGroup;
-import static main.style.SystemStyle.createFormSubtitle;
-import static main.style.SystemStyle.createSplitRow;
 import static main.style.SystemStyle.roundPanel;
-import static main.style.SystemStyle.styleComboBox;
-import static main.style.SystemStyle.styleInput;
 import main.store.DataTopics;
 import static main.style.SystemStyle.SELECTED;
 import static main.style.SystemStyle.TEXTCOLOR;
 import static main.style.SystemStyle.WHITE;
 import main.ui.components.CustomButton;
-import static main.ui.components.CustomButton.createButton;
 import main.ui.components.Header;
 import main.ui.components.ReactivePanel;
 import main.ui.components.ScrollableTable;
@@ -141,7 +129,7 @@ public class BarangayPanel extends ReactivePanel {
         );
 
         for (Report report : reportService.getAllReports()) {
-            List<PopupItem> actions = new ArrayList<PopupItem>();
+            List<PopupItem> actions = new ArrayList<>();
             actions.add(new PopupItem("Review", "Open report review", () -> reviewReport(report)));
             actions.add(new PopupItem("Delete", "Remove this report", () -> deleteReport(report)));
 
@@ -169,7 +157,7 @@ public class BarangayPanel extends ReactivePanel {
         );
 
         for (Complaint complaint : complaintService.getAllComplaints()) {
-            List<PopupItem> actions = new ArrayList<PopupItem>();
+            List<PopupItem> actions = new ArrayList<>();
             actions.add(new PopupItem("Review", "Open complaint review", () -> reviewComplaint(complaint)));
             actions.add(new PopupItem("Delete", "Remove this complaint", () -> deleteComplaint(complaint)));
 
@@ -197,7 +185,7 @@ public class BarangayPanel extends ReactivePanel {
         );
 
         for (Request request : requestService.getAllRequests()) {
-            List<PopupItem> actions = new ArrayList<PopupItem>();
+            List<PopupItem> actions = new ArrayList<>();
             actions.add(new PopupItem("Review", "Open request review", () -> reviewRequest(request)));
             actions.add(new PopupItem("Delete", "Remove this request", () -> deleteRequest(request)));
 
@@ -226,7 +214,7 @@ public class BarangayPanel extends ReactivePanel {
 
         JPanel navBar = roundPanel(50);
         navBar.setLayout(new GridLayout(1, 4, 5, 0));
-        navBar.setPreferredSize(new Dimension(520, 35));
+        navBar.setPreferredSize(new Dimension(560, 35));
 
         for (String view : new String[]{BARANGAY_VIEW, REPORT_VIEW, COMPLAINT_VIEW, REQUEST_VIEW}) {
             CustomButton button = new CustomButton(
@@ -234,9 +222,9 @@ public class BarangayPanel extends ReactivePanel {
                     "",
                     "",
                     20,
-                    100,
+                    80,
                     25,
-                    100,
+                    80,
                     25,
                     currentView.equals(view) ? SELECTED : WHITE,
                     currentView.equals(view) ? SELECTED : WHITE,

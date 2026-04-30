@@ -32,7 +32,7 @@ public class Sidebar extends JPanel implements ActionListener {
         setBorder(null);
 
         add(createSystemName());
-        add(separator());
+        add(separator(240));
         add(Box.createVerticalStrut(5));
 
         createMenu(labels, icons, iconHover);
@@ -67,7 +67,7 @@ public class Sidebar extends JPanel implements ActionListener {
 
             if (labels[i].equals("Settings")) {
                 add(Box.createVerticalGlue());
-                add(separator());
+                add(separator(240));
                 add(Box.createVerticalStrut(5));
             }
 
