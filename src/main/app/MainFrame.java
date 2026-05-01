@@ -2,10 +2,12 @@ package main.app;
 
 import main.dao.AccountDao;
 import main.database.SQLConnection;
+import main.model.Account;
 import main.service.AuthService;
 import main.ui.AppRouter;
-import main.ui.Barangay;
-import main.ui.Menro;
+import main.ui.BarangayFrame;
+import main.ui.MenroFrame;
+import main.ui.dialogs.BarangaySetupDialog;
 
 import javax.swing.*;
 import java.awt.*;
@@ -22,7 +24,8 @@ public class MainFrame extends JFrame {
     private final JPanel root = new JPanel(layout);
     private final AppRouter router = new AppRouter(root, layout);
 
-    private AuthService auth;
+private AuthService auth;
+    private LoginPanel loginPanel;
 
     public MainFrame() {
         auth = initAuth();
@@ -51,7 +54,7 @@ public class MainFrame extends JFrame {
                     JOptionPane.ERROR_MESSAGE
             );
             return null;
-        }
+}
     }
 
     private void setupFrame() {
@@ -68,19 +71,44 @@ public class MainFrame extends JFrame {
                 () -> router.navigate(LOGIN)
         ));
 
-        router.register(LOGIN, new LoginPanel(
+        // Initialize loginPanel first
+        this.loginPanel = null;
+        
+        // Login panel - check barangay setup after login
+        this.loginPanel = new LoginPanel(
                 auth,
                 () -> {
                     dispose();
-                    new Menro();
+                    new MenroFrame();
                 },
                 () -> {
                     dispose();
-                    new Barangay();
+                    
+                    // Check if barangay setup is needed
+                    Account acc = this.loginPanel != null ? this.loginPanel.getLastLoggedInAccount() : null;
+                    final Account finalAccount = acc;
+                    
+                    // Open Barangay window immediately
+                    final BarangayFrame barangay = new BarangayFrame();
+                    
+                    // If barangay setup is not complete, show setup dialog after a short delay
+                    if (finalAccount != null && !finalAccount.isBarangaySetupComplete()) {
+                        // Use Timer with 1000ms delay to show setup dialog
+                        Timer timer = new Timer(1000, e -> {
+                            SwingUtilities.invokeLater(() -> {
+                                BarangaySetupDialog setupDialog = new BarangaySetupDialog(barangay, finalAccount.getAccountId());
+                                setupDialog.setVisible(true);
+                            });
+                        });
+                        timer.setRepeats(false);
+                        timer.start();
+                    }
                 },
                 () -> router.navigate(WELCOME),
                 () -> router.navigate(SIGNUP)
-        ));
+        );
+        
+        router.register(LOGIN, this.loginPanel);
 
         router.register(SIGNUP, new SignupPanel(
                 auth,

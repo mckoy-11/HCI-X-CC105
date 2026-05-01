@@ -2,49 +2,38 @@ package main.ui;
 
 import java.awt.*;
 
-import main.ui.admin_pages.HomePanel;
-import main.ui.admin_pages.SchedulePanel;
-import main.ui.admin_pages.BarangayPanel;
-import main.ui.admin_pages.UsersPanel;
-import main.ui.admin_pages.SettingsPanel;
+import main.ui.officials_pages.HomePanel;
+import main.ui.officials_pages.ReportsPanel;
+import main.ui.officials_pages.SettingsPanel;
 
 import main.ui.components.Sidebar;
-
 import javax.swing.*;
-import main.ui.admin_pages.Management;
 
-public final class Menro extends JFrame {
+public final class BarangayFrame extends JFrame {
 
     private final CardLayout cardLayout = new CardLayout();
     private final JPanel contentPanel = new JPanel(cardLayout);
     
     private final String[] SIDEBARLABEL = { 
-        "Home", "Schedule", "Management", 
-        "Barangay", "Users", "Settings" 
+        "Home", "Reports", "Settings" 
     };
 
     private final String[] SIDEBARICONS = {
         "house-white.png", 
-        "calendar-white.png", 
-        "user-check-white.png", 
-        "pin-house-white.png",
-        "user-cog-white.png",
+        "file-chart-column.png",
         "settings-white.png"
     };
     
     private final String[] SIDEBARICONHOVER = {
         "house.png",
-        "calendar.png",
-        "user-check.png",
-        "pin-house.png",
-        "user-cog.png",
+        "file-chart-column.png",
         "settings.png"
     };
 
     private final AppRouter router;
 
-    public Menro() {
-        setTitle("WASTELY - MENRO");
+    public BarangayFrame() {
+        setTitle("WASTELY - Barangay");
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         
@@ -54,10 +43,7 @@ public final class Menro extends JFrame {
 
         // Register screens
         router.register("Home",       new HomePanel());
-        router.register("Schedule",   new SchedulePanel());
-        router.register("Management", new Management());
-        router.register("Barangay",   new BarangayPanel());
-        router.register("Users",      new UsersPanel());
+        router.register("Reports",    new ReportsPanel());
         router.register("Settings",   new SettingsPanel());
 
         Sidebar sidebar = new Sidebar(
@@ -80,6 +66,6 @@ public final class Menro extends JFrame {
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(Menro::new);
+        SwingUtilities.invokeLater(BarangayFrame::new);
     }
 }

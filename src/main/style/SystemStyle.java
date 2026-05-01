@@ -88,7 +88,7 @@ public final class SystemStyle {
         Image scaled = icon.getImage().getScaledInstance(size, size, Image.SCALE_SMOOTH);
         return new ImageIcon(scaled);
     }
-
+    
     public static JSeparator separator(int size) {
         JSeparator separator = new JSeparator(SwingConstants.HORIZONTAL);
         separator.setMaximumSize(new Dimension(size, 1));
@@ -344,6 +344,9 @@ public final class SystemStyle {
     /**
      * Creates a fixed-size action button for forms.
      * Use for Save, Cancel, etc. buttons.
+     * @param text
+     * @param isPrimary
+     * @return 
      */
     public static JButton createFormButton(String text, boolean isPrimary) {
         JButton button;

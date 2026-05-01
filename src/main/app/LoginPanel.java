@@ -26,10 +26,13 @@ public class LoginPanel extends JPanel {
 
     private AuthService authService;
 
-    private final Runnable onMenro;
+private final Runnable onMenro;
     private final Runnable onBarangay;
     private final Runnable onBack;
     private final Runnable onSignup;
+    
+    // Store last logged in account for external access
+    private Account lastLoggedInAccount;
 
     public LoginPanel() {
         this(null, null, null, null, null);
@@ -142,13 +145,16 @@ public class LoginPanel extends JPanel {
             return;
         }
 
-        clearStatus(statusLabel);
+clearStatus(statusLabel);
         UserSession.startSession(
                 account.getAccountId(),
                 account.getEmail(),
                 account.getRole(),
                 account.getName()
         );
+        
+        // Store account for external access (e.g., barangay setup check)
+        this.lastLoggedInAccount = account;
 
         String role = account.getRole();
 
@@ -183,12 +189,19 @@ public class LoginPanel extends JPanel {
         passField.getDocument().addDocumentListener(clearOnChange);
     }
 
-    private void runAction(Runnable action) {
+private void runAction(Runnable action) {
         if (action != null) {
             action.run();
         }
         if (action == onSignup || action == onBack) {
             clearStatus(statusLabel);
         }
+    }
+    
+    /**
+     * Get the last logged in account (for checking barangay setup status)
+     */
+    public Account getLastLoggedInAccount() {
+        return lastLoggedInAccount;
     }
 }

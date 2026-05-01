@@ -2,38 +2,49 @@ package main.ui;
 
 import java.awt.*;
 
-import main.ui.officials_pages.HomePanel;
-import main.ui.officials_pages.ReportsPanel;
-import main.ui.officials_pages.SettingsPanel;
+import main.ui.admin_pages.HomePanel;
+import main.ui.admin_pages.SchedulePanel;
+import main.ui.admin_pages.BarangayPanel;
+import main.ui.admin_pages.UsersPanel;
+import main.ui.admin_pages.SettingsPanel;
 
 import main.ui.components.Sidebar;
-import javax.swing.*;
 
-public final class Barangay extends JFrame {
+import javax.swing.*;
+import main.ui.admin_pages.Management;
+
+public final class MenroFrame extends JFrame {
 
     private final CardLayout cardLayout = new CardLayout();
     private final JPanel contentPanel = new JPanel(cardLayout);
     
     private final String[] SIDEBARLABEL = { 
-        "Home", "Reports", "Settings" 
+        "Home", "Schedule", "Management", 
+        "Barangay", "Users", "Settings" 
     };
 
     private final String[] SIDEBARICONS = {
         "house-white.png", 
-        "file-chart-column.png",
+        "calendar-white.png", 
+        "user-check-white.png", 
+        "pin-house-white.png",
+        "user-cog-white.png",
         "settings-white.png"
     };
     
     private final String[] SIDEBARICONHOVER = {
         "house.png",
-        "file-chart-column.png",
+        "calendar.png",
+        "user-check.png",
+        "pin-house.png",
+        "user-cog.png",
         "settings.png"
     };
 
     private final AppRouter router;
 
-    public Barangay() {
-        setTitle("WASTELY - Barangay");
+    public MenroFrame() {
+        setTitle("WASTELY - MENRO");
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         
@@ -43,7 +54,10 @@ public final class Barangay extends JFrame {
 
         // Register screens
         router.register("Home",       new HomePanel());
-        router.register("Reports",    new ReportsPanel());
+        router.register("Schedule",   new SchedulePanel());
+        router.register("Management", new Management());
+        router.register("Barangay",   new BarangayPanel());
+        router.register("Users",      new UsersPanel());
         router.register("Settings",   new SettingsPanel());
 
         Sidebar sidebar = new Sidebar(
@@ -66,6 +80,6 @@ public final class Barangay extends JFrame {
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(Barangay::new);
+        SwingUtilities.invokeLater(MenroFrame::new);
     }
 }

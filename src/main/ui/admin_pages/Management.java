@@ -242,11 +242,6 @@ public class Management extends ReactivePanel {
             container.add(createTruckCard(truck), gbc);
         }
 
-        // push everything to top
-        gbc.gridy = y;
-        gbc.weighty = 1;
-        container.add(new JPanel(), gbc);
-
         ScrollablePanel scrollable = new ScrollablePanel(container);
         panel.add(scrollable, BorderLayout.CENTER);
 
@@ -256,7 +251,7 @@ public class Management extends ReactivePanel {
     private JPanel createTruckCard(Truck truck) {
         JPanel card = Card(20);
         card.setLayout(new BorderLayout(15, 10));
-        card.setBorder(BorderFactory.createCompoundBorder(new LineBorder(Color.GREEN), new EmptyBorder(15, 15, 15, 15)));
+        card.setBorder(new EmptyBorder(15, 15, 15, 15));
         card.setBackground(WHITE);
         card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 130));
 

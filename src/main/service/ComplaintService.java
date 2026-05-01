@@ -1,5 +1,6 @@
 package main.service;
 
+import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
 import main.dao.ComplaintDao;
@@ -24,7 +25,7 @@ public class ComplaintService {
             boolean success = complaintDao.save(complaint);
             publish(success);
             return success;
-        } catch (Exception e) {
+        } catch (SQLException e) {
             return false;
         }
     }
@@ -34,7 +35,7 @@ public class ComplaintService {
             boolean success = complaintDao.update(complaint);
             publish(success);
             return success;
-        } catch (Exception e) {
+        } catch (SQLException e) {
             return false;
         }
     }
@@ -44,7 +45,7 @@ public class ComplaintService {
             boolean success = complaintDao.delete(id);
             publish(success);
             return success;
-        } catch (Exception e) {
+        } catch (SQLException e) {
             return false;
         }
     }
@@ -52,7 +53,7 @@ public class ComplaintService {
     public Complaint getComplaintById(int id) {
         try {
             return complaintDao.findById(id);
-        } catch (Exception e) {
+        } catch (SQLException e) {
             return null;
         }
     }
@@ -60,7 +61,7 @@ public class ComplaintService {
     public List<Complaint> getAllComplaints() {
         try {
             return complaintDao.findAll();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             return Collections.emptyList();
         }
     }
@@ -68,7 +69,7 @@ public class ComplaintService {
     public List<Complaint> getComplaintsByStatus(String status) {
         try {
             return complaintDao.findByStatus(status);
-        } catch (Exception e) {
+        } catch (SQLException e) {
             return Collections.emptyList();
         }
     }
@@ -76,7 +77,7 @@ public class ComplaintService {
     public List<Complaint> getUnreadComplaints() {
         try {
             return complaintDao.findUnread();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             return Collections.emptyList();
         }
     }
@@ -84,7 +85,7 @@ public class ComplaintService {
     public List<Complaint> getArchivedComplaints() {
         try {
             return complaintDao.findArchived();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             return Collections.emptyList();
         }
     }
@@ -94,7 +95,7 @@ public class ComplaintService {
             boolean success = complaintDao.markAsRead(id);
             publish(success);
             return success;
-        } catch (Exception e) {
+        } catch (SQLException e) {
             return false;
         }
     }
@@ -104,7 +105,7 @@ public class ComplaintService {
             boolean success = complaintDao.updateStatus(id, status);
             publish(success);
             return success;
-        } catch (Exception e) {
+        } catch (SQLException e) {
             return false;
         }
     }
@@ -112,7 +113,7 @@ public class ComplaintService {
     public int getTotalComplaintCount() {
         try {
             return complaintDao.getTotalCount();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             return 0;
         }
     }
@@ -120,7 +121,7 @@ public class ComplaintService {
     public int getReviewedComplaintCount() {
         try {
             return complaintDao.getCountByStatus("Approved") + complaintDao.getCountByStatus("Rejected");
-        } catch (Exception e) {
+        } catch (SQLException e) {
             return 0;
         }
     }
@@ -128,7 +129,7 @@ public class ComplaintService {
     public int getUnreadComplaintCount() {
         try {
             return complaintDao.getUnreadCount();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             return 0;
         }
     }
@@ -136,7 +137,7 @@ public class ComplaintService {
     public int getArchivedComplaintCount() {
         try {
             return complaintDao.getArchivedCount();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             return 0;
         }
     }

@@ -4,11 +4,24 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.GridLayout;
+import java.awt.Insets;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.imageio.ImageIO;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JTextArea;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import main.model.Barangay;
@@ -16,6 +29,7 @@ import main.model.Complaint;
 import main.model.PopupItem;
 import main.model.Report;
 import main.model.Request;
+import main.model.Truck;
 import main.service.BarangayService;
 import main.service.ComplaintService;
 import main.service.ReportService;
@@ -31,9 +45,13 @@ import main.store.DataTopics;
 import static main.style.SystemStyle.SELECTED;
 import static main.style.SystemStyle.TEXTCOLOR;
 import static main.style.SystemStyle.WHITE;
+import static main.style.SystemStyle.createCapsuleLabel;
+import static main.style.SystemStyle.createFormButton;
+import static main.style.SystemStyle.createTransparentPanel;
 import main.ui.components.CustomButton;
 import main.ui.components.Header;
 import main.ui.components.ReactivePanel;
+import main.ui.components.ScrollablePanel;
 import main.ui.components.ScrollableTable;
 import main.ui.components.SummaryCards;
 public class BarangayPanel extends ReactivePanel {
@@ -99,21 +117,165 @@ public class BarangayPanel extends ReactivePanel {
         panel.add(createHeader("Barangay Management"), BorderLayout.NORTH);
 
         ScrollableTable table = new ScrollableTable(
-                "Barangay", "Household", "Collection Day", "Contact", "Status", "Action"
+                "Barangay", "Purok", "Population", "Household", "Collection Day", "Status", "Action"
         );
 
         for (Barangay barangay : barangayService.getAllBarangays()) {
             table.addRow(
                     safe(barangay.getBarangayName()),
+                    barangay.getPurokCount(),
+                    barangay.getPopulation(),
                     barangay.getBarangayHousehold(),
                     safe(barangay.getCollectionDay()),
-                    safe(barangay.getContact()),
                     safe(barangay.getStatus(), "Active")
             );
         }
 
         panel.add(table, BorderLayout.CENTER);
         return panel;
+    }
+    
+    private JPanel createReport() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setOpaque(false);
+        panel.add(createHeader("Truck Management"), BorderLayout.NORTH);
+
+        JPanel container = new JPanel(new GridBagLayout());
+        container.setOpaque(false);
+        container.setBorder(new EmptyBorder(10, 10, 10, 10));
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.weightx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(0, 0, 10, 0); // spacing between cards
+
+        int y = 0;
+        for (Report report : reportService.getAllReports()) {
+            gbc.gridy = y++;
+            container.add(createReportCard(report), gbc);
+        }
+
+        ScrollablePanel scrollable = new ScrollablePanel(container);
+        panel.add(scrollable, BorderLayout.CENTER);
+
+        return panel;
+    }
+    
+    private JPanel createReportCard(Report report) {
+        JPanel card = Card(20);
+        card.setLayout(new BorderLayout(15, 10));
+        card.setBorder(new EmptyBorder(15, 15, 15, 15));
+        card.setBackground(WHITE);
+        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 130));
+        
+        
+        return card;
+    }
+    
+    private JPanel createComplaintView() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setOpaque(false);
+        panel.add(createHeader("Complaint Management"), BorderLayout.NORTH);
+
+        JPanel container = new JPanel(new GridBagLayout());
+        container.setOpaque(false);
+        container.setBorder(new EmptyBorder(10, 10, 10, 10));
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.weightx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(0, 0, 10, 0);
+
+        int y = 0;
+        for (Complaint complaint : complaintService.getAllComplaints()) {
+            gbc.gridy = y++;
+            container.add(createComplaintCard(complaint), gbc);
+        }
+
+        ScrollablePanel scrollable = new ScrollablePanel(container);
+        panel.add(scrollable, BorderLayout.CENTER);
+
+        return panel;
+    }
+    
+    private JPanel createComplaintCard(Complaint complaint) {
+
+        JPanel card = Card(20);
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setBorder(new EmptyBorder(15, 15, 15, 15));
+        card.setBackground(WHITE);
+        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 260));
+
+        // =========================================================
+        // TOP SECTION
+        // =========================================================
+        JPanel top = createTransparentPanel(new BorderLayout());
+
+        JLabel id = new JLabel("Report no: " + complaint.getComplaintId());
+        JLabel status = createCapsuleLabel(
+                complaint.getStatus(),
+                Color.LIGHT_GRAY,
+                TEXTCOLOR
+        );
+
+        top.add(id, BorderLayout.WEST);
+        top.add(status, BorderLayout.EAST);
+
+        // =========================================================
+        // IMAGE
+        // =========================================================
+        JLabel image = createImageLabel(complaint.getProof());
+        image.setPreferredSize(new Dimension(0, 120));
+        image.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
+        image.setHorizontalAlignment(SwingConstants.CENTER);
+
+        // =========================================================
+        // DETAILS SECTION
+        // =========================================================
+        JPanel details = createTransparentPanel();
+        details.setLayout(new BoxLayout(details, BoxLayout.Y_AXIS));
+
+        JLabel barangay = new JLabel("Barangay: " + complaint.getBarangayName());
+        JLabel location = new JLabel("Location: " + complaint.getLocation());
+        JLabel date = new JLabel("Date: " + complaint.getCreatedAt());
+
+        JTextArea description = new JTextArea(complaint.getMessage());
+        description.setLineWrap(true);
+        description.setWrapStyleWord(true);
+        description.setEditable(false);
+        description.setOpaque(false);
+        description.setBorder(null);
+
+        details.add(barangay);
+        details.add(location);
+        details.add(date);
+        details.add(description);
+
+        // =========================================================
+        // BUTTONS
+        // =========================================================
+        JPanel btns = createTransparentPanel(new GridLayout(1, 2, 10, 0));
+
+        JButton contact = createFormButton("Contact", false);
+        JButton view = createFormButton("Review", false);
+
+        btns.add(contact);
+        btns.add(view);
+
+        // =========================================================
+        // CARD ASSEMBLY
+        // =========================================================
+        card.add(top);
+        card.add(Box.createVerticalStrut(10));
+        card.add(image);
+        card.add(Box.createVerticalStrut(10));
+        card.add(details);
+        card.add(Box.createVerticalStrut(10));
+        card.add(btns);
+
+        return card;
     }
 
     private JPanel createReportView() {
@@ -144,7 +306,7 @@ public class BarangayPanel extends ReactivePanel {
         return panel;
     }
 
-    private JPanel createComplaintView() {
+    private JPanel createComplaint() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setOpaque(false);
         panel.add(createHeader("Complaint Management"), BorderLayout.NORTH);
@@ -341,7 +503,7 @@ public class BarangayPanel extends ReactivePanel {
             new Color(232, 114, 82, 20)
         };
     }
-
+    
     private PopupItem reviewRequest(Request request) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
@@ -364,5 +526,20 @@ public class BarangayPanel extends ReactivePanel {
 
     private PopupItem deleteReport(Report report) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+    
+    private static JLabel createImageLabel(byte[] imageBytes) {
+        try {
+            ByteArrayInputStream bis = new ByteArrayInputStream(imageBytes);
+            BufferedImage img = ImageIO.read(bis);
+
+            ImageIcon icon = new ImageIcon(img);
+
+            return new JLabel(icon);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return new JLabel("No Image");
     }
 }

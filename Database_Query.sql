@@ -1,3 +1,210 @@
+CREATE DATABASE IF NOT EXISTS wcms;
+USE wcms;
+
+-- =========================================================
+-- 1. AUTH / IDENTITY LAYER
+-- =========================================================
+
+CREATE TABLE accounts (
+    account_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(120) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    last_login TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE roles (
+    role_id INT AUTO_INCREMENT PRIMARY KEY,
+    role_name VARCHAR(50) NOT NULL UNIQUE
+);
+
+CREATE TABLE account_roles (
+    account_id BIGINT NOT NULL,
+    role_id INT NOT NULL,
+    PRIMARY KEY (account_id, role_id),
+
+    FOREIGN KEY (account_id) REFERENCES accounts(account_id) ON DELETE CASCADE,
+    FOREIGN KEY (role_id) REFERENCES roles(role_id) ON DELETE CASCADE
+);
+
+-- =========================================================
+-- 2. STATUS SYSTEM (FULLY NORMALIZED - NO ENUMS)
+-- =========================================================
+
+CREATE TABLE status_domains (
+    status_domain_id INT AUTO_INCREMENT PRIMARY KEY,
+    domain_name VARCHAR(50) NOT NULL UNIQUE
+);
+
+CREATE TABLE statuses (
+    status_id INT AUTO_INCREMENT PRIMARY KEY,
+    status_domain_id INT NOT NULL,
+    status_name VARCHAR(50) NOT NULL,
+
+    UNIQUE (status_domain_id, status_name),
+
+    FOREIGN KEY (status_domain_id)
+        REFERENCES status_domains(status_domain_id)
+        ON DELETE CASCADE
+);
+
+-- =========================================================
+-- 3. BARANGAY MODULE
+-- =========================================================
+
+CREATE TABLE collection_days (
+    collection_day_id INT AUTO_INCREMENT PRIMARY KEY,
+    day_name VARCHAR(20) NOT NULL UNIQUE
+);
+
+CREATE TABLE barangays (
+    barangay_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(120) NOT NULL UNIQUE,
+    household_count INT DEFAULT 0,
+    contact_number VARCHAR(50),
+    collection_day_id INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (collection_day_id)
+        REFERENCES collection_days(collection_day_id)
+);
+
+CREATE TABLE barangay_admins (
+    barangay_admin_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    barangay_id BIGINT NOT NULL UNIQUE,
+    account_id BIGINT NOT NULL UNIQUE,
+
+    FOREIGN KEY (barangay_id) REFERENCES barangays(barangay_id) ON DELETE CASCADE,
+    FOREIGN KEY (account_id) REFERENCES accounts(account_id) ON DELETE CASCADE
+);
+
+-- =========================================================
+-- 4. PERSONNEL MODULE
+-- =========================================================
+
+CREATE TABLE genders (
+    gender_id INT AUTO_INCREMENT PRIMARY KEY,
+    gender_name VARCHAR(20) NOT NULL UNIQUE
+);
+
+CREATE TABLE personnel_roles (
+    role_id INT AUTO_INCREMENT PRIMARY KEY,
+    role_name VARCHAR(50) NOT NULL UNIQUE
+);
+
+CREATE TABLE personnel (
+    personnel_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    full_name VARCHAR(120) NOT NULL,
+    age INT,
+    gender_id INT,
+    address VARCHAR(255),
+    contact_number VARCHAR(50),
+    role_id INT NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (role_id) REFERENCES personnel_roles(role_id),
+    FOREIGN KEY (gender_id) REFERENCES genders(gender_id)
+);
+
+-- =========================================================
+-- 5. TRANSPORT MODULE
+-- =========================================================
+
+CREATE TABLE truck_types (
+    truck_type_id INT AUTO_INCREMENT PRIMARY KEY,
+    type_name VARCHAR(50) NOT NULL UNIQUE
+);
+
+CREATE TABLE trucks (
+    truck_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    plate_number VARCHAR(30) NOT NULL UNIQUE,
+    truck_type_id INT NOT NULL,
+    status_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (truck_type_id) REFERENCES truck_types(truck_type_id),
+    FOREIGN KEY (status_id) REFERENCES statuses(status_id)
+);
+
+-- =========================================================
+-- 6. TEAM SYSTEM
+-- =========================================================
+
+CREATE TABLE teams (
+    team_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    team_name VARCHAR(80) NOT NULL UNIQUE,
+    status_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (status_id) REFERENCES statuses(status_id)
+);
+
+CREATE TABLE team_member_roles (
+    role_id INT AUTO_INCREMENT PRIMARY KEY,
+    role_name VARCHAR(50) NOT NULL UNIQUE
+);
+
+CREATE TABLE team_members (
+    team_id BIGINT NOT NULL,
+    personnel_id BIGINT NOT NULL,
+    member_role_id INT NOT NULL,
+
+    PRIMARY KEY (team_id, personnel_id),
+
+    FOREIGN KEY (team_id) REFERENCES teams(team_id) ON DELETE CASCADE,
+    FOREIGN KEY (personnel_id) REFERENCES personnel(personnel_id) ON DELETE CASCADE,
+    FOREIGN KEY (member_role_id) REFERENCES team_member_roles(role_id)
+);
+
+-- =========================================================
+-- 7. SCHEDULING SYSTEM
+-- =========================================================
+
+CREATE TABLE schedules (
+    schedule_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    barangay_id BIGINT NOT NULL,
+    team_id BIGINT,
+    schedule_datetime DATETIME NOT NULL,
+    status_id INT NOT NULL,
+
+    UNIQUE (barangay_id, schedule_datetime),
+
+    FOREIGN KEY (barangay_id) REFERENCES barangays(barangay_id),
+    FOREIGN KEY (team_id) REFERENCES teams(team_id),
+    FOREIGN KEY (status_id) REFERENCES statuses(status_id)
+);
+
+-- =========================================================
+-- 8. TICKET SYSTEM (COMPLAINT / REPORT / REQUEST UNIFIED)
+-- =========================================================
+
+CREATE TABLE ticket_types (
+    ticket_type_id INT AUTO_INCREMENT PRIMARY KEY,
+    type_name VARCHAR(30) NOT NULL UNIQUE
+);
+
+CREATE TABLE tickets (
+    ticket_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    ticket_type_id INT NOT NULL,
+    account_id BIGINT,
+    barangay_id BIGINT,
+    message TEXT,
+    proof BLOB,
+    location VARCHAR(255),
+    is_read BOOLEAN DEFAULT FALSE,
+    status_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (ticket_type_id) REFERENCES ticket_types(ticket_type_id),
+    FOREIGN KEY (account_id) REFERENCES accounts(account_id) ON DELETE SET NULL,
+    FOREIGN KEY (barangay_id) REFERENCES barangays(barangay_id) ON DELETE SET NULL,
+    FOREIGN KEY (status_id) REFERENCES statuses(status_id)
+);
+
 ================================================================================
 WCMS SAMPLE DATA - SQL INSERT STATEMENTS
 ================================================================================
