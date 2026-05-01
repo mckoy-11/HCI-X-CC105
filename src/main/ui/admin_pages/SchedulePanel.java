@@ -11,8 +11,7 @@ import static main.ui.components.CustomButton.createButton;
 import main.ui.components.Header;
 import main.ui.components.ReactivePanel;
 import main.ui.components.ScrollableTable;
-import main.ui.dialogs.AdminDialogSupport;
-import main.ui.dialogs.ScheduleDialog;
+import main.ui.dialogs.ScheduleFormDialog;
 import main.store.DataTopics;
 
 public final class SchedulePanel extends ReactivePanel {
@@ -89,35 +88,35 @@ public final class SchedulePanel extends ReactivePanel {
     }
     
     private void addSchedule() {
-        Frame frame = AdminDialogSupport.resolveFrame(this);
-        if (ScheduleDialog.showDialog(frame, null)) {
-            AdminDialogSupport.showSuccess(this, "Schedule saved successfully.");
-            refreshPanel();
-        }
+        JFrame parent = (JFrame) SwingUtilities.getWindowAncestor(this);
+        ScheduleFormDialog dialog = new ScheduleFormDialog(parent, null);
+        dialog.setVisible(true);
     }
 
     private void editSchedule(Schedule schedule) {
-        Frame frame = AdminDialogSupport.resolveFrame(this);
-        if (ScheduleDialog.showDialog(frame, schedule)) {
-            AdminDialogSupport.showSuccess(this, "Schedule updated successfully.");
-            refreshPanel();
-        }
+        JFrame parent = (JFrame) SwingUtilities.getWindowAncestor(this);
+        ScheduleFormDialog dialog = new ScheduleFormDialog(parent, schedule);
+        dialog.setVisible(true);
     }
 
     private void deleteSchedule(Schedule schedule) {
-        if (!AdminDialogSupport.confirmAction(
-                this,
-                "Delete Schedule",
-                "Delete the schedule for " + schedule.getBarangayName() + "?"
-        )) {
-            return;
-        }
-
-        if (service.deleteSchedule(schedule.getId())) {
-            AdminDialogSupport.showSuccess(this, "Schedule deleted successfully.");
-            refreshPanel();
-        } else {
-            AdminDialogSupport.showFailure(this, "Failed to delete schedule.");
+        int confirm = JOptionPane.showConfirmDialog(
+            this,
+            "Are you sure you want to delete this schedule?",
+            "Confirm Delete",
+            JOptionPane.YES_NO_OPTION
+        );
+        
+        if (confirm == JOptionPane.YES_OPTION) {
+            boolean success = service.deleteSchedule(schedule.getId());
+            if (!success) {
+                JOptionPane.showMessageDialog(
+                    this,
+                    "Failed to delete schedule",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
+                );
+            }
         }
     }
 

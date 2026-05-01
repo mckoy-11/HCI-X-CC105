@@ -17,8 +17,8 @@ public class Team {
     private String truckPlateNumber;
     private int driverId;
     private String driverName;
-    private List<Integer> collectorIds = new ArrayList<Integer>();
-    private List<String> collectorNames = new ArrayList<String>();
+    private List<Integer> collectorIds = new ArrayList<>();
+    private List<String> collectorNames = new ArrayList<>();
 
     /**
      * Creates an empty team instance.
@@ -237,9 +237,18 @@ public class Team {
      *
      * @param collectorNames the collector names to store
      */
-    public void setCollectorNames(List<String> collectorNames) {
+public void setCollectorNames(List<String> collectorNames) {
         this.collectorNames = collectorNames == null
                 ? new ArrayList<>()
                 : new ArrayList<>(collectorNames);
+    }
+
+/**
+     * Returns display value for ComboBox.
+     * Shows team name or "Unassigned" if no team is assigned.
+     */
+    @Override
+    public String toString() {
+        return teamName != null && !teamName.trim().isEmpty() ? teamName : "Unassigned";
     }
 }

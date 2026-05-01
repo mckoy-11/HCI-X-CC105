@@ -74,6 +74,49 @@ public class AnnouncementDao {
         }
     }
 
+    public boolean addAnnouncement(Announcement announcement) throws SQLException {
+        ensureSchema();
+        try (Connection conn = SQLConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                     "INSERT INTO " + TABLE_NAME
+                             + " (title, message, is_active, is_archived, created_at, expires_at)"
+                             + " VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ?)",
+                     Statement.RETURN_GENERATED_KEYS)) {
+            ps.setString(1, announcement.getTitle());
+            ps.setString(2, announcement.getMessage());
+            ps.setBoolean(3, announcement.isActive());
+            ps.setBoolean(4, announcement.isArchived());
+            ps.setTimestamp(5, announcement.getExpiresAt());
+            
+            boolean result = ps.executeUpdate() > 0;
+            if (result) {
+                ResultSet rs = ps.getGeneratedKeys();
+                if (rs.next()) {
+                    announcement.setAnnouncementId(rs.getInt(1));
+                }
+            }
+            return result;
+        }
+    }
+
+    public boolean updateAnnouncement(Announcement announcement) throws SQLException {
+        ensureSchema();
+        try (Connection conn = SQLConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                     "UPDATE " + TABLE_NAME
+                             + " SET title = ?, message = ?, is_active = ?, is_archived = ?, expires_at = ?"
+                             + " WHERE announcement_id = ?")) {
+            ps.setString(1, announcement.getTitle());
+            ps.setString(2, announcement.getMessage());
+            ps.setBoolean(3, announcement.isActive());
+            ps.setBoolean(4, announcement.isArchived());
+            ps.setTimestamp(5, announcement.getExpiresAt());
+            ps.setInt(6, announcement.getAnnouncementId());
+            
+            return ps.executeUpdate() > 0;
+        }
+    }
+
     public void archiveExpired() throws SQLException {
         ensureSchema();
         try (Connection conn = SQLConnection.getConnection();

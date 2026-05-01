@@ -47,6 +47,15 @@ public class Schedule {
     public LocalTime getTime() { return time; }
     public void setTime(LocalTime time) { this.time = time; }
 
-    public String getStatus() { return status; }
+public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    /**
+     * Returns display value for ComboBox.
+     * Shows barangay name or "Unassigned" if no barangay is set.
+     */
+    @Override
+    public String toString() {
+        return barangayName != null && !barangayName.trim().isEmpty() ? barangayName : "Unassigned";
+    }
 }

@@ -17,7 +17,6 @@ import main.service.AuthService;
 import static main.style.SystemStyle.*;
 import main.ui.components.CustomButton;
 import main.ui.components.Header;
-import main.ui.dialogs.AdminDialogSupport;
 import main.store.DataChangeBus;
 import main.store.DataTopics;
 
@@ -373,7 +372,7 @@ public final class SettingsPanel extends JPanel {
                 handleSupportRequest(action);
                 break;
             default:
-                AdminDialogSupport.showFailure(this, "No form is available for " + action + " yet.");
+                
                 break;
         }
     }
@@ -404,122 +403,22 @@ public final class SettingsPanel extends JPanel {
                 twoFactorEnabled = enabled;
                 break;
         }
-        AdminDialogSupport.showSuccess(this, "Setting updated successfully.");
     }
 
     private void handleDisplayNameChange() {
-        Account account = getCurrentAccount();
-        if (account == null) return;
-
-        JTextField nameField = new JTextField(account.getName() != null ? account.getName() : UserSession.getDisplayName());
-        if (!showFormDialog("Edit Display Name", panelWithField("Display Name:", nameField))) return;
-
-        String name = nameField.getText().trim();
-        if (name.isEmpty()) {
-            AdminDialogSupport.showFailure(this, "Display name cannot be empty.");
-            return;
-        }
-
-        account.setName(name);
-        try {
-            if (accountDao != null && accountDao.update(account)) {
-                UserSession.startSession(account.getAccountId(), account.getEmail(), account.getRole(), account.getName());
-                DataChangeBus.publish(DataTopics.ACCOUNTS, DataTopics.SESSION);
-                AdminDialogSupport.showSuccess(this, "Display name updated successfully.");
-            } else {
-                AdminDialogSupport.showFailure(this, "Failed to update display name.");
-            }
-        } catch (Exception ex) {
-            AdminDialogSupport.showFailure(this, "Failed to update display name.");
-        }
+       
     }
 
     private void handleEmailChange() {
-        Account account = getCurrentAccount();
-        if (account == null) return;
-
-        JTextField emailField = new JTextField(account.getEmail());
-        if (!showFormDialog("Change Email", panelWithField("New Email:", emailField))) return;
-
-        String email = emailField.getText().trim();
-        if (email.isEmpty() || !email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
-            AdminDialogSupport.showFailure(this, "Please enter a valid email address.");
-            return;
-        }
-
-        account.setEmail(email);
-        try {
-            if (accountDao != null && accountDao.update(account)) {
-                UserSession.startSession(account.getAccountId(), email, account.getRole(), account.getName());
-                DataChangeBus.publish(DataTopics.ACCOUNTS, DataTopics.SESSION);
-                AdminDialogSupport.showSuccess(this, "Email updated successfully.");
-            } else {
-                AdminDialogSupport.showFailure(this, "Failed to update email.");
-            }
-        } catch (Exception ex) {
-            AdminDialogSupport.showFailure(this, "Failed to update email.");
-        }
+       
     }
 
     private void handlePasswordChange() {
-        if (!UserSession.isActive() || authService == null) {
-            AdminDialogSupport.showFailure(this, "No active account was found.");
-            return;
-        }
-
-        JPasswordField currentField = new JPasswordField();
-        JPasswordField newField = new JPasswordField();
-        JPasswordField confirmField = new JPasswordField();
-
-        JPanel panel = new JPanel();
-        panel.setOpaque(false);
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.add(labeledField("Current Password:", currentField));
-        panel.add(Box.createVerticalStrut(12));
-        panel.add(labeledField("New Password:", newField));
-        panel.add(Box.createVerticalStrut(12));
-        panel.add(labeledField("Confirm Password:", confirmField));
-
-        if (!showFormDialog("Change Password", panel)) return;
-
-        String current = new String(currentField.getPassword());
-        String next = new String(newField.getPassword());
-        String confirm = new String(confirmField.getPassword());
-
-        if (!next.equals(confirm)) {
-            AdminDialogSupport.showFailure(this, "Passwords do not match.");
-            return;
-        }
-
-        String result = authService.changePassword(UserSession.getAccountId(), current, next);
-        if ("SUCCESS".equals(result)) {
-            AdminDialogSupport.showSuccess(this, "Password changed successfully.");
-        } else {
-            AdminDialogSupport.showFailure(this, result);
-        }
+       
     }
 
     private void handleAccountDeactivation() {
-        if (!UserSession.isActive() || accountDao == null) {
-            AdminDialogSupport.showFailure(this, "No active account was found.");
-            return;
-        }
-
-        if (!AdminDialogSupport.confirmAction(this, "Deactivate Account", "Deactivate this account and sign out?")) return;
-
-        try {
-            if (accountDao.updateStatus(UserSession.getAccountId(), "Inactive")) {
-                DataChangeBus.publish(DataTopics.ACCOUNTS, DataTopics.SESSION);
-                UserSession.logout();
-                AdminDialogSupport.showSuccess(this, "Account deactivated successfully.");
-                Window window = SwingUtilities.getWindowAncestor(this);
-                if (window != null) window.dispose();
-            } else {
-                AdminDialogSupport.showFailure(this, "Failed to deactivate account.");
-            }
-        } catch (Exception ex) {
-            AdminDialogSupport.showFailure(this, "Failed to deactivate account.");
-        }
+        
     }
 
     private String chooseOption(String title, String label, String[] options, String currentValue) {
@@ -531,7 +430,6 @@ public final class SettingsPanel extends JPanel {
         }
 
         String selected = (String) comboBox.getSelectedItem();
-        AdminDialogSupport.showSuccess(this, title + " updated successfully.");
         return selected;
     }
 
@@ -561,34 +459,16 @@ public final class SettingsPanel extends JPanel {
 
         if (!showFormDialog(title, panel)) return;
 
-        if (messageArea.getText().trim().isEmpty()) {
-            AdminDialogSupport.showFailure(this, "Please enter a message before submitting.");
-            return;
-        }
-
-        AdminDialogSupport.showSuccess(this, title + " submitted successfully.");
     }
 
     private Account getCurrentAccount() {
-        if (!UserSession.isActive() || accountDao == null) {
-            AdminDialogSupport.showFailure(this, "No active account was found.");
+        
             return null;
-        }
-
-        try {
-            Account account = accountDao.findById(UserSession.getAccountId());
-            if (account == null) {
-                AdminDialogSupport.showFailure(this, "Unable to load the current account.");
-            }
-            return account;
-        } catch (Exception e) {
-            AdminDialogSupport.showFailure(this, "Unable to load the current account.");
-            return null;
-        }
+        
     }
 
     private boolean showFormDialog(String title, JPanel panel) {
-        return AdminDialogSupport.showFormDialog(this, title, panel);
+        return false;
     }
 
     private JPanel panelWithField(String label, JComponent field) {

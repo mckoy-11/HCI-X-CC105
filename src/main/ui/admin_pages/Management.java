@@ -5,20 +5,24 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
@@ -26,6 +30,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
+import javax.swing.JOptionPane;
+import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import main.model.Personnel;
@@ -60,8 +66,10 @@ import main.ui.components.Header;
 import main.ui.components.ReactivePanel;
 import main.ui.components.ScrollablePanel;
 import main.ui.components.ScrollableTable;
+import main.ui.dialogs.PersonnelFormDialog;
+import main.ui.dialogs.TruckFormDialog;
+import main.ui.dialogs.TeamFormDialog;
 import main.ui.components.SummaryCards;
-import main.ui.dialogs.AdminDialogSupport;
 
 public class Management extends ReactivePanel {
 
@@ -166,18 +174,18 @@ public class Management extends ReactivePanel {
     }
     
     private JPanel createTeamCard(Team team) {
-        JPanel card = roundPanel(20);
+        JPanel card = Card(20);
         card.setLayout(new BorderLayout());
         card.setBorder(new EmptyBorder(15, 15, 15, 15));
         card.setPreferredSize(new Dimension(300, 100));
         card.setBackground(WHITE);
         
         // LEFT (icon + info)
-        JPanel left = new JPanel();
-        left.setOpaque(false);
-        left.setLayout(new BoxLayout(left, BoxLayout.Y_AXIS));
+        JPanel center = new JPanel();
+        center.setOpaque(false);
+        center.setLayout(new BoxLayout(center, BoxLayout.Y_AXIS));
 
-        javax.swing.JLabel name = new javax.swing.JLabel(safe(team.getTeamName()));
+        JLabel name = new javax.swing.JLabel(safe(team.getTeamName()));
         name.setFont(SUBTITLEBOLD);
 
         javax.swing.JLabel location = new javax.swing.JLabel(
@@ -185,23 +193,29 @@ public class Management extends ReactivePanel {
         );
         location.setForeground(TEXTCOLOR);
 
-        left.add(name);
-        left.add(Box.createVerticalStrut(5));
-        left.add(location);
+        center.add(name);
+        center.add(Box.createVerticalStrut(5));
+        center.add(location);
 
         // RIGHT (status + button)
-        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JPanel right = new JPanel(new BorderLayout());
         right.setOpaque(false);
 
-        javax.swing.JLabel status = new javax.swing.JLabel(safe(team.getStatus(), "Active"));
-        status.setForeground(new Color(34, 197, 94)); // green
+        JLabel status = new JLabel(safe(team.getStatus(), "Active"));
+        status.setForeground(new Color(34, 197, 94));
+        status.setHorizontalAlignment(SwingConstants.CENTER);
 
-        javax.swing.JButton viewBtn = createButton("View Details", "arrow.png", "arrow.png", 16);
+        JButton viewBtn = createButton("View Details", "arrow.png", "arrow.png", 16);
+        viewBtn.setBackground(SIDEBAR);
+        viewBtn.addActionListener(e -> editTeam(team));
 
-        right.add(status);
-        right.add(viewBtn);
-
-        card.add(left, BorderLayout.CENTER);
+        right.add(status, BorderLayout.NORTH);
+        right.add(viewBtn, BorderLayout.SOUTH);
+        
+        JLabel icon = new JLabel(loadIcon("team.png", 35));
+        icon.setBorder(new EmptyBorder(10, 20, 10, 20));
+        card.add(icon, BorderLayout.WEST);
+        card.add(center, BorderLayout.CENTER);
         card.add(right, BorderLayout.EAST);
 
         return card;
@@ -242,7 +256,7 @@ public class Management extends ReactivePanel {
     private JPanel createTruckCard(Truck truck) {
         JPanel card = Card(20);
         card.setLayout(new BorderLayout(15, 10));
-        card.setBorder(new EmptyBorder(15, 15, 15, 15));
+        card.setBorder(BorderFactory.createCompoundBorder(new LineBorder(Color.GREEN), new EmptyBorder(15, 15, 15, 15)));
         card.setBackground(WHITE);
         card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 130));
 
@@ -251,10 +265,10 @@ public class Management extends ReactivePanel {
 
         JLabel title = new JLabel("Truck " + safe(truck.getPlateNumber()));
         title.setFont(SUBTITLEBOLD);
-        
+
         JLabel status = new JLabel(safe(truck.getStatus(), "Active"));
         status.setOpaque(true);
-        status.setBackground(new Color(220, 252, 231)); 
+        status.setBackground(new Color(220, 252, 231));
         status.setForeground(new Color(22, 163, 74));
         status.setBorder(new EmptyBorder(5, 12, 5, 12));
 
@@ -266,14 +280,27 @@ public class Management extends ReactivePanel {
         top.add(Box.createHorizontalGlue());
         top.add(status);
 
-        JPanel info = new JPanel(new GridLayout(1, 3, 20, 0));
+        JPanel info = new JPanel(new GridLayout(1, 4, 20, 0)); // FIXED: 4 columns
         info.setOpaque(false);
 
         info.add(createInfoItem("Capacity", safe(truck.getCapacity(), "None")));
         info.add(createInfoItem("Assigned To", safe(truck.getAssignedTeam(), "None")));
         info.add(createInfoItem("Truck Type", safe(truck.getTruckType(), "None")));
         info.add(createInfoItem("Assigned Barangay", safe(truck.getAssignedBarangay(), "None")));
-        
+
+        // Action buttons
+        JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        actionPanel.setOpaque(false);
+
+        JButton editBtn = createButton("Edit", "edit.png", "edit.png", 16);
+        editBtn.addActionListener(e -> editTruck(truck));
+
+        JButton deleteBtn = createButton("Delete", "delete.png", "delete.png", 16);
+        deleteBtn.addActionListener(e -> deleteTruck(truck));
+
+        actionPanel.add(editBtn);
+        actionPanel.add(deleteBtn);
+
         JPanel center = new JPanel();
         center.setLayout(new BoxLayout(center, BoxLayout.Y_AXIS));
         center.setOpaque(false);
@@ -283,6 +310,8 @@ public class Management extends ReactivePanel {
         center.add(separator(1000));
         center.add(Box.createVerticalStrut(10));
         center.add(info);
+        center.add(Box.createVerticalStrut(10));
+        center.add(actionPanel);
 
         card.add(image, BorderLayout.WEST);
         card.add(center, BorderLayout.CENTER);
@@ -399,332 +428,6 @@ public class Management extends ReactivePanel {
         refreshUI();
     }
 
-    private void openCreateDialog() {
-        if (PERSONNEL_VIEW.equals(currentView)) {
-            openPersonnelDialog(null);
-        } else if (TEAM_VIEW.equals(currentView)) {
-            openTeamDialog(null);
-        } else {
-            openTruckDialog(null);
-        }
-    }
-
-    private void openPersonnelDialog(Personnel existing) {
-        JTextField nameField = styleInput(new JTextField(existing == null ? "" : safe(existing.getFullName())));
-        JTextField ageField = styleInput(new JTextField(existing == null || existing.getAge() <= 0 ? "" : String.valueOf(existing.getAge())));
-        JTextField addressField = styleInput(new JTextField(existing == null ? "" : safe(existing.getAddress())));
-        JTextField phoneField = styleInput(new JTextField(existing == null ? "" : safe(existing.getPhoneNumber())));
-        JComboBox<String> genderCombo = styleComboBox(new JComboBox<>(new String[]{"Male", "Female", "Other"}));
-        JComboBox<String> roleCombo = styleComboBox(new JComboBox<>(new String[]{"Collector", "Driver", "Supervisor", "Unassigned"}));
-        JComboBox<String> statusCombo = styleComboBox(new JComboBox<>(new String[]{"Active", "Inactive", "Unassigned"}));
-
-        if (existing != null) {
-            genderCombo.setSelectedItem(safe(existing.getGender(), "Male"));
-            roleCombo.setSelectedItem(safe(existing.getRole(), "Collector"));
-            statusCombo.setSelectedItem(safe(existing.getStatus(), "Active"));
-        }
-
-        JPanel form = buildFormPanel(
-                createFieldGroup("Full Name", nameField),
-                createSplitRow(
-                        createFieldGroup("Age", ageField),
-                        createFieldGroup("Gender", genderCombo)
-                ),
-                createFieldGroup("Address", addressField),
-                createFieldGroup("Phone", phoneField),
-                createSplitRow(
-                        createFieldGroup("Role", roleCombo),
-                        createFieldGroup("Status", statusCombo)
-                )
-        );
-
-        if (!AdminDialogSupport.showFormDialog(this, existing == null ? "Add Personnel" : "Edit Personnel", form)) {
-            return;
-        }
-
-        int age;
-        try {
-            age = Integer.parseInt(ageField.getText().trim());
-        } catch (NumberFormatException e) {
-            AdminDialogSupport.showFailure(this, "Age must be a valid number.");
-            return;
-        }
-
-        Personnel personnel = existing == null ? new Personnel() : existing;
-        personnel.setFullName(nameField.getText().trim());
-        personnel.setAge(age);
-        personnel.setGender((String) genderCombo.getSelectedItem());
-        personnel.setAddress(addressField.getText().trim());
-        personnel.setPhoneNumber(phoneField.getText().trim());
-        personnel.setRole((String) roleCombo.getSelectedItem());
-        personnel.setStatus((String) statusCombo.getSelectedItem());
-        if (existing == null && personnel.getTeam() == null) {
-            personnel.setTeam(null);
-        }
-
-        boolean success = existing == null
-                ? personnelService.addPersonnel(personnel)
-                : personnelService.updatePersonnel(personnel);
-
-        if (!success) {
-            AdminDialogSupport.showFailure(this, "Unable to save personnel details.");
-            return;
-        }
-
-        AdminDialogSupport.showSuccess(this, existing == null ? "Personnel added successfully." : "Personnel updated successfully.");
-    }
-
-    private void openTeamDialog(Team existing) {
-        JTextField nameField = styleInput(new JTextField(existing == null ? "" : safe(existing.getTeamName())));
-        JComboBox<SelectionItem> leaderCombo = createPersonnelCombo("Select leader", personnelService.getAllPersonnel());
-        JComboBox<SelectionItem> driverCombo = createPersonnelCombo("Select driver", personnelService.getAllPersonnel());
-        JComboBox<SelectionItem> truckCombo = createTruckCombo("Select truck", truckService.getAllTrucks());
-        JComboBox<String> statusCombo = styleComboBox(new JComboBox<>(new String[]{"Active", "Inactive"}));
-
-        List<Personnel> collectorOptions = personnelService.getAllPersonnel().stream()
-                .filter(personnel -> personnel.getId() > 0)
-                .collect(Collectors.toList());
-        JList<SelectionItem> collectorsList = createCollectorList(collectorOptions);
-
-        if (existing != null) {
-            selectById(leaderCombo, existing.getLeaderId());
-            selectById(driverCombo, existing.getDriverId());
-            selectById(truckCombo, existing.getTruckId());
-            statusCombo.setSelectedItem(safe(existing.getStatus(), "Active"));
-            selectCollectors(collectorsList, existing.getCollectorIds());
-        }
-
-        JPanel form = buildFormPanel(
-                createFieldGroup("Team Name", nameField),
-                createSplitRow(
-                        createFieldGroup("Leader", leaderCombo),
-                        createFieldGroup("Driver", driverCombo)
-                ),
-                createSplitRow(
-                        createFieldGroup("Truck", truckCombo),
-                        createFieldGroup("Status", statusCombo)
-                ),
-                collectorField(collectorsList)
-        );
-
-        if (!AdminDialogSupport.showFormDialog(this, existing == null ? "Add Team" : "Edit Team", form)) {
-            return;
-        }
-
-        Team team = existing == null ? new Team() : existing;
-        team.setTeamName(nameField.getText().trim());
-        team.setLeaderId(selectedId(leaderCombo));
-        team.setLeaderName(selectedLabel(leaderCombo));
-        team.setDriverId(selectedId(driverCombo));
-        team.setDriverName(selectedLabel(driverCombo));
-        team.setTruckId(selectedId(truckCombo));
-        team.setTruckPlateNumber(selectedLabel(truckCombo));
-        team.setStatus((String) statusCombo.getSelectedItem());
-        team.setCollectorIds(selectedIds(collectorsList));
-        team.setCollectorNames(selectedNames(collectorsList));
-
-        if (team.getTeamName().trim().isEmpty()) {
-            AdminDialogSupport.showFailure(this, "Team name is required.");
-            return;
-        }
-
-        boolean success = existing == null ? teamService.addTeam(team) : teamService.updateTeam(team);
-        if (!success) {
-            AdminDialogSupport.showFailure(this, "Unable to save the team.");
-            return;
-        }
-
-        AdminDialogSupport.showSuccess(this, existing == null ? "Team added successfully." : "Team updated successfully.");
-    }
-
-    private void openTruckDialog(Truck existing) {
-        JTextField plateField = styleInput(new JTextField(existing == null ? "" : safe(existing.getPlateNumber())));
-        JTextField typeField = styleInput(new JTextField(existing == null ? "" : safe(existing.getTruckType())));
-        JTextField capacityField = styleInput(new JTextField(existing == null ? "" : safe(existing.getCapacity())));
-        JComboBox<String> statusCombo = styleComboBox(new JComboBox<>(new String[]{"Active", "Maintenance", "Inactive"}));
-        statusCombo.setSelectedItem(existing == null ? "Active" : safe(existing.getStatus(), "Active"));
-
-        JPanel form = buildFormPanel(
-                createFieldGroup("Plate Number", plateField),
-                createSplitRow(
-                        createFieldGroup("Truck Type", typeField),
-                        createFieldGroup("Capacity", capacityField)
-                ),
-                createFieldGroup("Status", statusCombo)
-        );
-
-        if (!AdminDialogSupport.showFormDialog(this, existing == null ? "Add Truck" : "Edit Truck", form)) {
-            return;
-        }
-
-        Truck truck = existing == null ? new Truck() : existing;
-        truck.setPlateNumber(plateField.getText().trim());
-        truck.setTruckType(typeField.getText().trim());
-        truck.setCapacity(capacityField.getText().trim());
-        truck.setStatus((String) statusCombo.getSelectedItem());
-
-        if (truck.getPlateNumber().trim().isEmpty()) {
-            AdminDialogSupport.showFailure(this, "Plate number is required.");
-            return;
-        }
-
-        boolean success = existing == null ? truckService.addTruck(truck) : truckService.updateTruck(truck);
-        if (!success) {
-            AdminDialogSupport.showFailure(this, "Unable to save the truck.");
-            return;
-        }
-
-        AdminDialogSupport.showSuccess(this, existing == null ? "Truck added successfully." : "Truck updated successfully.");
-    }
-
-    private void deletePersonnel(Personnel personnel) {
-        if (!AdminDialogSupport.confirmAction(this, "Delete Personnel", "Delete " + safe(personnel.getFullName()) + "?")) {
-            return;
-        }
-        if (personnelService.deletePersonnel(personnel.getId())) {
-            AdminDialogSupport.showSuccess(this, "Personnel deleted successfully.");
-        } else {
-            AdminDialogSupport.showFailure(this, "Failed to delete personnel.");
-        }
-    }
-
-    private void deleteTeam(Team team) {
-        if (!AdminDialogSupport.confirmAction(this, "Delete Team", "Delete " + safe(team.getTeamName()) + "?")) {
-            return;
-        }
-        if (teamService.deleteTeam(team.getId())) {
-            AdminDialogSupport.showSuccess(this, "Team deleted successfully.");
-        } else {
-            AdminDialogSupport.showFailure(this, "Failed to delete team.");
-        }
-    }
-
-    private void deleteTruck(Truck truck) {
-        if (!AdminDialogSupport.confirmAction(this, "Delete Truck", "Delete " + safe(truck.getPlateNumber()) + "?")) {
-            return;
-        }
-        if (truckService.deleteTruck(truck.getId())) {
-            AdminDialogSupport.showSuccess(this, "Truck deleted successfully.");
-        } else {
-            AdminDialogSupport.showFailure(this, "Failed to delete truck.");
-        }
-    }
-
-    private JPanel buildFormPanel(JComponent... sections) {
-        JPanel form = new JPanel();
-        form.setOpaque(false);
-        form.setLayout(new BoxLayout(form, BoxLayout.Y_AXIS));
-        form.add(createFormSubtitle("Keep records consistent and reusable across the management workspace."));
-        form.add(Box.createVerticalStrut(18));
-        for (int i = 0; i < sections.length; i++) {
-            form.add(sections[i]);
-            if (i < sections.length - 1) {
-                form.add(Box.createVerticalStrut(16));
-            }
-        }
-        return form;
-    }
-
-    private JPanel collectorField(JList<SelectionItem> collectorsList) {
-        JScrollPane scrollPane = new JScrollPane(collectorsList);
-        scrollPane.setPreferredSize(new Dimension(0, 180));
-        return createFieldGroup("Collectors", scrollPane);
-    }
-
-    private JComboBox<SelectionItem> createPersonnelCombo(String placeholder, List<Personnel> personnel) {
-        List<SelectionItem> items = new ArrayList<>();
-        items.add(new SelectionItem(0, placeholder));
-        for (Personnel person : personnel) {
-            items.add(new SelectionItem(person.getId(), person.getFullName()));
-        }
-        JComboBox<SelectionItem> comboBox = new JComboBox<>(items.toArray(new SelectionItem[0]));
-        styleComboBox(comboBox);
-        return comboBox;
-    }
-
-    private JComboBox<SelectionItem> createTruckCombo(String placeholder, List<Truck> trucks) {
-        List<SelectionItem> items = new ArrayList<>();
-        items.add(new SelectionItem(0, placeholder));
-        for (Truck truck : trucks) {
-            items.add(new SelectionItem(truck.getId(), truck.getPlateNumber()));
-        }
-        JComboBox<SelectionItem> comboBox = new JComboBox<>(items.toArray(new SelectionItem[0]));
-        styleComboBox(comboBox);
-        return comboBox;
-    }
-
-    private JList<SelectionItem> createCollectorList(List<Personnel> personnel) {
-        List<SelectionItem> items = new ArrayList<>();
-        for (Personnel person : personnel) {
-            items.add(new SelectionItem(person.getId(), person.getFullName()));
-        }
-
-        JList<SelectionItem> list = new JList<>(items.toArray(new SelectionItem[0]));
-        list.setVisibleRowCount(8);
-        list.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        list.setCellRenderer(new DefaultListCellRenderer() {
-            @Override
-            public Component getListCellRendererComponent(JList<?> source, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-                Component component = super.getListCellRendererComponent(source, value, index, isSelected, cellHasFocus);
-                if (value instanceof SelectionItem) {
-                    setText(((SelectionItem) value).label);
-                }
-                return component;
-            }
-        });
-        return list;
-    }
-
-    private void selectById(JComboBox<SelectionItem> comboBox, int id) {
-        for (int i = 0; i < comboBox.getItemCount(); i++) {
-            SelectionItem item = comboBox.getItemAt(i);
-            if (item.id == id) {
-                comboBox.setSelectedIndex(i);
-                return;
-            }
-        }
-    }
-
-    private void selectCollectors(JList<SelectionItem> list, List<Integer> ids) {
-        if (ids == null || ids.isEmpty()) {
-            return;
-        }
-
-        List<Integer> indexes = new ArrayList<>();
-        for (int i = 0; i < list.getModel().getSize(); i++) {
-            SelectionItem item = list.getModel().getElementAt(i);
-            if (ids.contains(item.id)) {
-                indexes.add(i);
-            }
-        }
-        int[] selected = indexes.stream().mapToInt(Integer::intValue).toArray();
-        list.setSelectedIndices(selected);
-    }
-
-    private int selectedId(JComboBox<SelectionItem> comboBox) {
-        SelectionItem item = (SelectionItem) comboBox.getSelectedItem();
-        return item == null ? 0 : item.id;
-    }
-
-    private String selectedLabel(JComboBox<SelectionItem> comboBox) {
-        SelectionItem item = (SelectionItem) comboBox.getSelectedItem();
-        return item == null || item.id == 0 ? null : item.label;
-    }
-
-    private List<Integer> selectedIds(JList<SelectionItem> list) {
-        List<Integer> ids = new ArrayList<>();
-        for (SelectionItem item : list.getSelectedValuesList()) {
-            ids.add(item.id);
-        }
-        return ids;
-    }
-
-    private List<String> selectedNames(JList<SelectionItem> list) {
-        return list.getSelectedValuesList().stream()
-                .map(item -> item.label)
-                .collect(Collectors.toList());
-    }
-
     private String safe(String value) {
         return safe(value, "");
     }
@@ -746,18 +449,108 @@ public class Management extends ReactivePanel {
         });
     }
 
-    private static final class SelectionItem {
-        private final int id;
-        private final String label;
+    private PopupItem openPersonnelDialog(Personnel personnel) {
+        JFrame parent = (JFrame) SwingUtilities.getWindowAncestor(this);
 
-        private SelectionItem(int id, String label) {
-            this.id = id;
-            this.label = label == null ? "" : label;
+        PersonnelFormDialog dialog = new PersonnelFormDialog(parent, personnel);
+        dialog.setLocationRelativeTo(parent);
+        dialog.setVisible(true);
+
+        return null;
+    }
+
+    private PopupItem deletePersonnel(Personnel personnel) {
+        int confirm = JOptionPane.showConfirmDialog(
+            this,
+            "Are you sure you want to delete " + personnel.getFullName() + "?",
+            "Confirm Delete",
+            JOptionPane.YES_NO_OPTION
+        );
+        
+        if (confirm == JOptionPane.YES_OPTION) {
+            boolean success = personnelService.deletePersonnel(personnel.getId());
+            if (!success) {
+                JOptionPane.showMessageDialog(
+                    this,
+                    "Failed to delete personnel",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
+                );
+            }
         }
+        return null;
+    }
 
-        @Override
-        public String toString() {
-            return label;
+    private void editTeam(Team team) {
+        JFrame parent = (JFrame) SwingUtilities.getWindowAncestor(this);
+        TeamFormDialog dialog = new TeamFormDialog(parent, team);
+        dialog.setVisible(true);
+    }
+
+    private void deleteTeam(Team team) {
+        int confirm = JOptionPane.showConfirmDialog(
+            this,
+            "Are you sure you want to delete team " + team.getTeamName() + "?",
+            "Confirm Delete",
+            JOptionPane.YES_NO_OPTION
+        );
+        
+        if (confirm == JOptionPane.YES_OPTION) {
+            boolean success = teamService.deleteTeam(team.getId());
+            if (!success) {
+                JOptionPane.showMessageDialog(
+                    this,
+                    "Failed to delete team",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
+                );
+            }
+        }
+    }
+
+    private void editTruck(Truck truck) {
+        JFrame parent = (JFrame) SwingUtilities.getWindowAncestor(this);
+        TruckFormDialog dialog = new TruckFormDialog(parent, truck);
+        dialog.setVisible(true);
+    }
+
+    private void deleteTruck(Truck truck) {
+        int confirm = JOptionPane.showConfirmDialog(
+            this,
+            "Are you sure you want to delete truck " + truck.getPlateNumber() + "?",
+            "Confirm Delete",
+            JOptionPane.YES_NO_OPTION
+        );
+        
+        if (confirm == JOptionPane.YES_OPTION) {
+            boolean success = truckService.deleteTruck(truck.getId());
+            if (!success) {
+                JOptionPane.showMessageDialog(
+                    this,
+                    "Failed to delete truck",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
+                );
+            }
+        }
+    }
+
+    private void openCreateDialog() {
+        JFrame parent = (JFrame) SwingUtilities.getWindowAncestor(this);
+        
+        switch (currentView) {
+            case PERSONNEL_VIEW:
+                PersonnelFormDialog personnelDialog = new PersonnelFormDialog(parent, null);
+                personnelDialog.setVisible(true);
+                break;
+            case TRUCK_VIEW:
+                TruckFormDialog truckDialog = new TruckFormDialog(parent, null);
+                truckDialog.setVisible(true);
+                break;
+            case TEAM_VIEW:
+                TeamFormDialog teamDialog = new TeamFormDialog(parent, null);
+                teamDialog.setVisible(true);
+                break;
         }
     }
 }

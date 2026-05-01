@@ -68,11 +68,20 @@ public class Truck {
         this.status = status;
     }
 
-    public String getAssignedTeam() {
+public String getAssignedTeam() {
         return assignedTeam;
     }
 
     public void setAssignedTeam(String assignedTeam) {
         this.assignedTeam = assignedTeam;
+    }
+
+/**
+     * Returns display value for ComboBox.
+     * Shows truck plate number or "Unassigned" if no truck is assigned.
+     */
+    @Override
+    public String toString() {
+        return plateNumber != null && !plateNumber.trim().isEmpty() ? plateNumber : "Unassigned";
     }
 }

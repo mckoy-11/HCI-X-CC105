@@ -16,6 +16,7 @@ public class Account {
     private int age;
     private String gender;
     private Timestamp lastLogin;
+    private boolean isBarangaySetupComplete;
 
     public Account() {}
 
@@ -27,7 +28,13 @@ public class Account {
         this.role = "BARANGAY";
     }
 
-    // existing getters/setters ...
+    public boolean isBarangaySetupComplete() {
+        return isBarangaySetupComplete;
+    }
+
+    public void setBarangaySetupComplete(boolean isBarangaySetupComplete) {
+        this.isBarangaySetupComplete = isBarangaySetupComplete;
+    }
 
     public String getRole() {
         return role;

@@ -3,7 +3,12 @@ package main.dao;
 import main.database.DbSchemaHelper;
 import main.model.Account;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,13 +39,17 @@ public class AccountDao {
     }
 
     public boolean save(Account a) throws SQLException {
-        String sql = "INSERT INTO account(name, email_address, password, status, role) VALUES (?, ?, ?, 'Active', ?)";
+        // Ensure the is_barangay_setup_complete column exists
+        ensureBarangaySetupColumn();
+        
+        String sql = "INSERT INTO account(name, email_address, password, status, role, is_barangay_setup_complete) VALUES (?, ?, ?, 'Active', ?, ?)";
         PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
 
         ps.setString(1, a.getName());
         ps.setString(2, a.getEmail());
         ps.setString(3, a.getPassword());
         ps.setString(4, a.getRole() != null ? a.getRole() : "BARANGAY");
+        ps.setBoolean(5, a.isBarangaySetupComplete());
 
         int rows = ps.executeUpdate();
 
@@ -327,6 +336,7 @@ public class AccountDao {
         a.setStatus(rs.getString("status"));
         a.setRole(rs.getString("role"));
         a.setLastLogin(rs.getTimestamp("last_login"));
+        
         try {
             a.setBarangayAdminId(rs.getInt("barangay_admin_id"));
             a.setAge(rs.getInt("age"));
@@ -340,6 +350,34 @@ public class AccountDao {
             a.setBarangayId(0);
             a.setBarangay(null);
         }
+        
+        try {
+            a.setBarangaySetupComplete(rs.getBoolean("is_barangay_setup_complete"));
+        } catch (SQLException ignored) {
+            a.setBarangaySetupComplete(false);
+        }
+        
         return a;
+    }
+    
+    private void ensureBarangaySetupColumn() throws SQLException {
+        if (!DbSchemaHelper.tableExists(conn, "account")) {
+            return;
+        }
+        if (!DbSchemaHelper.columnExists(conn, "account", "is_barangay_setup_complete")) {
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute("ALTER TABLE account ADD COLUMN is_barangay_setup_complete BOOLEAN DEFAULT FALSE");
+            }
+        }
+    }
+    
+    public boolean updateBarangaySetupComplete(int accountId, boolean complete) throws SQLException {
+        ensureBarangaySetupColumn();
+        String sql = "UPDATE account SET is_barangay_setup_complete = ? WHERE account_id = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setBoolean(1, complete);
+            ps.setInt(2, accountId);
+            return ps.executeUpdate() > 0;
+        }
     }
 }

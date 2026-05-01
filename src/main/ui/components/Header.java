@@ -99,11 +99,11 @@ public class Header extends JPanel {
                 ? UserSession.getDisplayName() + " (" + UserSession.getRole() + ")"
                 : "No active session");
         sessionItem.setEnabled(false);
-        menu.add(sessionItem);
+        //menu.add(sessionItem);
 
-        JMenuItem editName = new JMenuItem("Edit display name");
+        JMenuItem editName = new JMenuItem("Active");
         editName.addActionListener(event -> editDisplayName());
-        menu.add(editName);
+        //menu.add(editName);
 
         JMenuItem logout = new JMenuItem("Logout");
         logout.addActionListener(event -> logout());

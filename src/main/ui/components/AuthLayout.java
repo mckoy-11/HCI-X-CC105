@@ -8,7 +8,6 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.RenderingHints;
 import javax.swing.BorderFactory;
@@ -28,7 +27,6 @@ import static main.style.SystemStyle.MUTED_TEXT;
 import static main.style.SystemStyle.PRIMARY;
 import static main.style.SystemStyle.TITLEBOLD;
 import static main.style.SystemStyle.WHITE;
-import static main.style.SystemStyle.createAuthCard;
 import static main.style.SystemStyle.createTransparentPanel;
 
 public class AuthLayout extends JPanel {

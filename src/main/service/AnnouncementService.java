@@ -54,4 +54,28 @@ public class AnnouncementService {
             return false;
         }
     }
+
+    public boolean addAnnouncement(Announcement announcement) {
+        try {
+            boolean success = dao.addAnnouncement(announcement);
+            if (success) {
+                DataChangeBus.publish(DataTopics.ANNOUNCEMENTS, DataTopics.DASHBOARD);
+            }
+            return success;
+        } catch (SQLException e) {
+            return false;
+        }
+    }
+
+    public boolean updateAnnouncement(Announcement announcement) {
+        try {
+            boolean success = dao.updateAnnouncement(announcement);
+            if (success) {
+                DataChangeBus.publish(DataTopics.ANNOUNCEMENTS, DataTopics.DASHBOARD);
+            }
+            return success;
+        } catch (SQLException e) {
+            return false;
+        }
+    }
 }

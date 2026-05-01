@@ -36,9 +36,6 @@ import main.ui.components.Header;
 import main.ui.components.ReactivePanel;
 import main.ui.components.ScrollableTable;
 import main.ui.components.SummaryCards;
-import main.ui.dialogs.AdminDialogSupport;
-import main.ui.dialogs.MessageReviewDialog;
-
 public class BarangayPanel extends ReactivePanel {
 
     private static final String BARANGAY_VIEW = "Barangay";
@@ -307,63 +304,6 @@ public class BarangayPanel extends ReactivePanel {
         refreshCurrentView();
     }
 
-    private void reviewReport(Report report) {
-        java.awt.Frame frame = AdminDialogSupport.resolveFrame(this);
-        if (MessageReviewDialog.showReportDialog(frame, report, reportService)) {
-            AdminDialogSupport.showSuccess(this, "Report updated successfully.");
-        }
-    }
-
-    private void deleteReport(Report report) {
-        if (!AdminDialogSupport.confirmAction(this, "Delete Report", "Delete this report?")) {
-            return;
-        }
-
-        if (reportService.deleteReport(report.getReportId())) {
-            AdminDialogSupport.showSuccess(this, "Report deleted successfully.");
-        } else {
-            AdminDialogSupport.showFailure(this, "Failed to delete the report.");
-        }
-    }
-
-    private void reviewComplaint(Complaint complaint) {
-        java.awt.Frame frame = AdminDialogSupport.resolveFrame(this);
-        if (MessageReviewDialog.showComplaintDialog(frame, complaint, complaintService)) {
-            AdminDialogSupport.showSuccess(this, "Complaint updated successfully.");
-        }
-    }
-
-    private void deleteComplaint(Complaint complaint) {
-        if (!AdminDialogSupport.confirmAction(this, "Delete Complaint", "Delete this complaint?")) {
-            return;
-        }
-
-        if (complaintService.deleteComplaint(complaint.getComplaintId())) {
-            AdminDialogSupport.showSuccess(this, "Complaint deleted successfully.");
-        } else {
-            AdminDialogSupport.showFailure(this, "Failed to delete the complaint.");
-        }
-    }
-
-    private void reviewRequest(Request request) {
-        java.awt.Frame frame = AdminDialogSupport.resolveFrame(this);
-        if (MessageReviewDialog.showRequestDialog(frame, request, requestService)) {
-            AdminDialogSupport.showSuccess(this, "Request updated successfully.");
-        }
-    }
-
-    private void deleteRequest(Request request) {
-        if (!AdminDialogSupport.confirmAction(this, "Delete Request", "Delete this request?")) {
-            return;
-        }
-
-        if (requestService.deleteRequest(request.getRequestId())) {
-            AdminDialogSupport.showSuccess(this, "Request deleted successfully.");
-        } else {
-            AdminDialogSupport.showFailure(this, "Failed to delete the request.");
-        }
-    }
-
     private void refreshCurrentView() {
         SwingUtilities.invokeLater(() -> {
             summaryPanel.removeAll();
@@ -400,5 +340,29 @@ public class BarangayPanel extends ReactivePanel {
             new Color(59, 130, 246, 20),
             new Color(232, 114, 82, 20)
         };
+    }
+
+    private PopupItem reviewRequest(Request request) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    private PopupItem deleteRequest(Request request) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    private PopupItem reviewComplaint(Complaint complaint) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    private PopupItem deleteComplaint(Complaint complaint) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    private PopupItem reviewReport(Report report) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    private PopupItem deleteReport(Report report) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }

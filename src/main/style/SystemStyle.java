@@ -1,46 +1,13 @@
 package main.style;
 
-import java.awt.AWTException;
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Cursor;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.FlowLayout;
-import java.awt.Frame;
-import java.awt.GradientPaint;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.GridBagConstraints;
-import java.awt.GridLayout;
-import java.awt.Image;
-import java.awt.Insets;
-import java.awt.LayoutManager;
-import java.awt.Rectangle;
-import java.awt.RenderingHints;
-import java.awt.Robot;
-import java.awt.Shape;
+import java.awt.*;
 import java.awt.geom.Path2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.ConvolveOp;
 import java.awt.image.Kernel;
-import javax.swing.AbstractButton;
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.DefaultListCellRenderer;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JComponent;
-import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.JPanel;
-import javax.swing.JSeparator;
-import javax.swing.SwingConstants;
+import javax.swing.*;
 import javax.swing.border.Border;
-import javax.swing.border.EmptyBorder;
+import javax.swing.JTextArea;
 import javax.swing.text.JTextComponent;
 import main.ui.components.CustomButton;
 
@@ -91,7 +58,20 @@ public final class SystemStyle {
 
     public static final int FORM_WIDTH = 400;
     public static final int FIELD_HEIGHT = 56;
-    private static final Border EMPTY_BORDER = BorderFactory.createEmptyBorder();
+    
+    // Form Layout System - Figma-style design tokens
+    public static final int FORM_PADDING = 24;
+    public static final int FORM_SECTION_SPACING = 24;
+    public static final int FORM_FIELD_SPACING = 16;
+    public static final int FORM_LABEL_FIELD_GAP = 6;
+    public static final int FORM_BUTTON_HEIGHT = 42;
+    public static final int FORM_BUTTON_WIDTH = 100;
+    public static final int FORM_CORNER_RADIUS = 12;
+    public static final int FORM_INPUT_HEIGHT = 44;
+    public static final int FORM_TEXTAREA_MIN_HEIGHT = 100;
+    public static final int FORM_SPLIT_GAP = 14;
+    
+    public static final Border EMPTY_BORDER = BorderFactory.createEmptyBorder();
 
     private SystemStyle() {}
 
@@ -264,12 +244,185 @@ public final class SystemStyle {
     }
 
     public static JPanel createSplitRow(JComponent left, JComponent right) {
-        JPanel row = createTransparentPanel(new GridLayout(1, 2, 14, 0));
+        JPanel row = createTransparentPanel(new GridLayout(1, 2, FORM_SPLIT_GAP, 0));
         row.setAlignmentX(Component.LEFT_ALIGNMENT);
         row.setMaximumSize(new Dimension(FORM_WIDTH, 88));
         row.add(left);
         row.add(right);
         return row;
+    }
+
+    // ============================
+    // Form Layout System - Figma-style
+    // ============================
+
+    /**
+     * Creates a form section with a title and content.
+     * Use for grouping related fields together.
+     * @param title
+     * @param content
+     * @return 
+     */
+    public static JPanel createFormSection(String title, JComponent content) {
+        JPanel section = createTransparentPanel();
+        section.setLayout(new BoxLayout(section, BoxLayout.Y_AXIS));
+        section.setAlignmentX(Component.LEFT_ALIGNMENT);
+        section.setOpaque(false);
+
+        if (title != null && !title.trim().isEmpty()) {
+            JLabel titleLabel = new JLabel(title);
+            titleLabel.setFont(BUTTONBOLD.deriveFont(13f));
+            titleLabel.setForeground(textMuted);
+            titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+            section.add(titleLabel);
+            section.add(Box.createVerticalStrut(FORM_FIELD_SPACING));
+        }
+
+        content.setAlignmentX(Component.LEFT_ALIGNMENT);
+        section.add(content);
+        return section;
+    }
+
+    /**
+     * Creates a form row with label on top and input below.
+     * Standard single-column field layout.
+     * @param labelText
+     * @param input
+     * @return 
+     */
+    public static JPanel createFormField(String labelText, JComponent input) {
+        JPanel field = createTransparentPanel();
+        field.setLayout(new BoxLayout(field, BoxLayout.Y_AXIS));
+        field.setAlignmentX(Component.LEFT_ALIGNMENT);
+        field.setOpaque(false);
+
+        if (labelText != null && !labelText.trim().isEmpty()) {
+            JLabel label = createFieldLabel(labelText);
+            field.add(label);
+            field.add(Box.createVerticalStrut(FORM_LABEL_FIELD_GAP));
+        }
+
+        input.setAlignmentX(Component.LEFT_ALIGNMENT);
+        field.add(input);
+        return field;
+    }
+
+    /**
+     * Creates a horizontal row with two fields side by side.
+     * Use for related fields that fit on one line.
+     * @param left
+     * @param right
+     * @return 
+     */
+
+    public static JPanel createFormRow(JComponent left, JComponent right) {
+        JPanel row = createTransparentPanel(new GridLayout(1, 2, FORM_SPLIT_GAP, 0));
+        row.setOpaque(false);
+        row.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        left.setAlignmentX(Component.LEFT_ALIGNMENT);
+        right.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        row.add(left);
+        row.add(right);
+        return row;
+    }
+
+    /**
+     * Creates a form container that holds all form fields.
+     * Uses BoxLayout for vertical stacking with consistent spacing.
+     * @return 
+     */
+    public static JPanel createFormContainer() {
+        JPanel container = createTransparentPanel();
+        container.setLayout(new BoxLayout(container, BoxLayout.Y_AXIS));
+        container.setAlignmentX(Component.LEFT_ALIGNMENT);
+        container.setOpaque(false);
+        return container;
+    }
+
+    /**
+     * Creates a fixed-size action button for forms.
+     * Use for Save, Cancel, etc. buttons.
+     */
+    public static JButton createFormButton(String text, boolean isPrimary) {
+        JButton button;
+        if (isPrimary) {
+            button = new CustomButton(
+                    text, null, null, 0,
+                    FORM_BUTTON_WIDTH, FORM_BUTTON_HEIGHT,
+                    FORM_BUTTON_WIDTH, FORM_BUTTON_HEIGHT,
+                    PRIMARY, HOVERBTN,
+                    WHITE, WHITE,
+                    false, true
+            );
+        } else {
+            button = new CustomButton(
+                    text, null, null, 0,
+                    FORM_BUTTON_WIDTH, FORM_BUTTON_HEIGHT,
+                    FORM_BUTTON_WIDTH, FORM_BUTTON_HEIGHT,
+                    new Color(240, 243, 252), new Color(232, 236, 250),
+                    textDark, PRIMARY,
+                    false, true
+            );
+        }
+        button.setFont(BUTTONBOLD.deriveFont(14f));
+        button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        button.setFocusPainted(false);
+        return button;
+    }
+
+    /**
+     * Creates the standard action button row for forms.
+     * Buttons are aligned to the right with consistent spacing.
+     */
+    public static JPanel createFormActions(JButton... buttons) {
+        JPanel actions = createTransparentPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        actions.setOpaque(false);
+        actions.setBorder(BorderFactory.createEmptyBorder(FORM_SECTION_SPACING, 0, 0, 0));
+
+        for (int i = 0; i < buttons.length; i++) {
+            if (i > 0) {
+                actions.add(Box.createHorizontalStrut(FORM_FIELD_SPACING));
+            }
+            buttons[i].setPreferredSize(new Dimension(FORM_BUTTON_WIDTH, FORM_BUTTON_HEIGHT));
+            actions.add(buttons[i]);
+        }
+
+        return actions;
+    }
+
+    /**
+     * Creates a styled textarea with consistent sizing.
+     * No scroll pane - textarea expands to fill space.
+     */
+    public static JTextArea styleTextArea(JTextArea textarea, int minRows) {
+        textarea.setFont(SUBTITLEPLAIN.deriveFont(15f));
+        textarea.setForeground(textDark);
+        textarea.setBackground(INPUT_BACKGROUND);
+        textarea.setBorder(createInputBorder());
+        textarea.setLineWrap(true);
+        textarea.setWrapStyleWord(true);
+        return textarea;
+    }
+
+    /**
+     * Creates a divider/separator for form sections.
+     */
+    public static JSeparator createFormDivider() {
+        JSeparator divider = new JSeparator(SwingConstants.HORIZONTAL);
+        divider.setForeground(CARD_BORDER);
+        divider.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
+        return divider;
+    }
+
+    /**
+     * Creates a description text for forms.
+     */
+    public static JLabel createFormDescription(String text) {
+        JLabel label = createFormSubtitle(text);
+        label.setMaximumSize(new Dimension(FORM_WIDTH, 60));
+        return label;
     }
 
     public static JButton createPrimaryButton(String text) {

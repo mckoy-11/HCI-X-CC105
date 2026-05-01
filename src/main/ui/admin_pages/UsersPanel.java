@@ -12,13 +12,13 @@ import main.database.SQLConnection;
 import main.model.Account;
 import main.model.PopupItem;
 import main.service.AnnouncementService;
-import main.ui.dialogs.AdminDialogSupport;
 
 import static main.style.SystemStyle.*;
 
 import main.ui.components.*;
 import static main.ui.components.CustomButton.createButton;
 import main.ui.components.ReactivePanel;
+import main.ui.dialogs.AnnouncementFormDialog;
 import main.store.DataChangeBus;
 import main.store.DataTopics;
 
@@ -239,84 +239,30 @@ public class UsersPanel extends ReactivePanel {
     }
 
     private void openAnnouncementDialog() {
-        JTextField titleField = styleInput(new JTextField());
-        JTextArea messageArea = new JTextArea(8, 24);
-        messageArea.setLineWrap(true);
-        messageArea.setWrapStyleWord(true);
+        JFrame parent = (JFrame) SwingUtilities.getWindowAncestor(this);
+        AnnouncementFormDialog dialog = new AnnouncementFormDialog(parent, null);
+        dialog.setVisible(true);
+    }
 
-        JPanel form = new JPanel();
-        form.setOpaque(false);
-        form.setLayout(new BoxLayout(form, BoxLayout.Y_AXIS));
-        form.add(createFormSubtitle("Active announcements appear at the top of the Barangay dashboard and archive automatically after one week or when replaced."));
-        form.add(Box.createVerticalStrut(16));
-        form.add(createFieldGroup("Title", titleField));
-        form.add(Box.createVerticalStrut(16));
-        form.add(createFieldLabel("Message"));
-        form.add(Box.createVerticalStrut(8));
-        form.add(new JScrollPane(messageArea));
+    private JPanel createMessageField(JTextArea messageArea) {
+        JPanel group = createTransparentPanel();
+        group.setLayout(new BoxLayout(group, BoxLayout.Y_AXIS));
+        group.setMaximumSize(new Dimension(Integer.MAX_VALUE, 220));
 
-        if (!AdminDialogSupport.showFormDialog(this, "Send Announcement", form)) {
-            return;
-        }
+        JLabel label = createFieldLabel("Message");
+        label.setMaximumSize(new Dimension(Integer.MAX_VALUE, 20));
+        group.add(label);
 
-        String title = titleField.getText().trim();
-        String message = messageArea.getText().trim();
-        if (message.isEmpty()) {
-            AdminDialogSupport.showFailure(this, "Announcement message is required.");
-            return;
-        }
+        group.add(Box.createVerticalStrut(8));
 
-        if (announcementService.publishAnnouncement(title, message)) {
-            AdminDialogSupport.showSuccess(this, "Announcement sent successfully.");
-        } else {
-            AdminDialogSupport.showFailure(this, "Unable to send the announcement.");
-        }
+
+        return group;
     }
 
     private void toggleUserStatus(Account account) {
-        String nextStatus = "Active".equalsIgnoreCase(account.getStatus()) ? "Inactive" : "Active";
-        boolean confirmed = AdminDialogSupport.confirmAction(
-                this,
-                "Change Status",
-                "Change " + account.getName() + " to " + nextStatus + "?"
-        );
-        if (!confirmed || accountDao == null) {
-            return;
-        }
-
-        try {
-            if (accountDao.updateStatus(account.getAccountId(), nextStatus)) {
-                DataChangeBus.publish(DataTopics.ACCOUNTS, DataTopics.DASHBOARD);
-                AdminDialogSupport.showSuccess(this, "User status updated successfully.");
-                refreshUI();
-            } else {
-                AdminDialogSupport.showFailure(this, "Failed to update user status.");
-            }
-        } catch (SQLException e) {
-            AdminDialogSupport.showFailure(this, "Failed to update user status.");
-        }
+     
     }
 
     private void deleteUser(Account account) {
-        boolean confirmed = AdminDialogSupport.confirmAction(
-                this,
-                "Delete User",
-                "Delete " + account.getName() + " permanently?"
-        );
-        if (!confirmed || accountDao == null) {
-            return;
-        }
-
-        try {
-            if (accountDao.delete(account.getAccountId())) {
-                DataChangeBus.publish(DataTopics.ACCOUNTS, DataTopics.DASHBOARD);
-                AdminDialogSupport.showSuccess(this, "User deleted successfully.");
-                refreshUI();
-            } else {
-                AdminDialogSupport.showFailure(this, "Failed to delete user.");
-            }
-        } catch (SQLException e) {
-            AdminDialogSupport.showFailure(this, "Failed to delete user.");
-        }
     }
 }

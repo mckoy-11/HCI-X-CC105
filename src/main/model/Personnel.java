@@ -55,7 +55,16 @@ public class Personnel {
     public String getAddress() { return address; }
     public void setAddress(String address) { this.address = address; }
 
-    public String getTeam() { return team; }
+public String getTeam() { return team; }
     public void setTeam(String team) { this.team = team; }
 
+    /**
+     * Returns display value for ComboBox.
+     * Shows full name or "Unassigned" if no name is set.
+     * @return 
+     */
+    @Override
+    public String toString() {
+        return fullName != null && !fullName.trim().isEmpty() ? fullName : "Unassigned";
+    }
 }
