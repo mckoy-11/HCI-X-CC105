@@ -62,39 +62,6 @@ public class HomePanel extends JPanel {
         add(pageWrapper, BorderLayout.CENTER);
     }
     
-    private JPanel createContent() {
-        JPanel content = createTransparentPanel(new BorderLayout(0, 10));
-        JPanel cards = createTransparentPanel(new GridLayout(1, 4, 5, 5));
-            cards.add(
-                new SummaryCards(
-                    new String[]{"Next Schedule", "Total Pickups", "Report", "Responce"},
-                    new int[]{
-                        cardData.getTodayCollection(),
-                        cardData.getCompletedCollection(),
-                        cardData.getMissedCollection(),
-                        cardData.getUnreadComplaints()
-                    },
-                    new String[]{"", "", "Needs follow up", "Awaiting response"},
-                    new String[]{"calendar.png", "circle-check.png", "circle-alert.png", "message.png"},
-                    new Color[]{
-                        new Color(59,  130, 246, 20),
-                        new Color(129, 219, 122, 20),
-                        new Color(232, 114, 82,  20),
-                        new Color(139, 92,  246, 20), 
-                    },
-                    new String[]{
-                        cardData.getTodayBarangay(), 
-                        cardData.getCompletedBarangay(), 
-                        cardData.getMissedBarangay(), 
-                        "Unread"
-                    }
-                )
-            );
-            content.add(cards, BorderLayout.NORTH);
-            content.add(createMainContent(), BorderLayout.CENTER);
-        return content;
-    }
-
     private JPanel createAnnouncementSection() {
         try {
             Announcement activeAnnouncement = announcementService.getActiveAnnouncement();
@@ -146,10 +113,43 @@ public class HomePanel extends JPanel {
             return null;
         }
     }
+    
+    private JPanel createContent() {
+        JPanel content = createTransparentPanel(new BorderLayout(0, 10));
+        JPanel cards = createTransparentPanel(new GridLayout(1, 4, 0, 0));
+            cards.add(
+                new SummaryCards(
+                    new String[]{"Next Schedule", "Total Pickups", "Report", "Responce"},
+                    new int[]{
+                        cardData.getTodayCollection(),
+                        cardData.getCompletedCollection(),
+                        cardData.getMissedCollection(),
+                        cardData.getUnreadComplaints()
+                    },
+                    new String[]{"", "", "Needs follow up", "Awaiting response"},
+                    new String[]{"calendar.png", "circle-check.png", "circle-alert.png", "message.png"},
+                    new Color[]{
+                        new Color(59,  130, 246, 20),
+                        new Color(129, 219, 122, 20),
+                        new Color(232, 114, 82,  20),
+                        new Color(139, 92,  246, 20), 
+                    },
+                    new String[]{
+                        cardData.getTodayBarangay(), 
+                        cardData.getCompletedBarangay(), 
+                        cardData.getMissedBarangay(), 
+                        "Unread"
+                    }
+                )
+            );
+            content.add(cards, BorderLayout.NORTH);
+            content.add(createMainContent(), BorderLayout.CENTER);
+        return content;
+    }
 
     private JPanel createMainContent() {
         dashboardGrid.setOpaque(false);
-        dashboardGrid.setLayout(new GridLayout(1, 2, 10, 20));
+        dashboardGrid.setLayout(new GridLayout(1, 2, 15, 20));
         dashboardGrid.add(createComplianceCard());
         dashboardGrid.add(createCollectionsCard());
         return dashboardGrid;

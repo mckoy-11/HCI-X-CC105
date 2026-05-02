@@ -57,7 +57,6 @@ public class BarangayDetailsPanel extends JPanel {
         root.setLayout(new BorderLayout(0, 10));
         root.setBorder(new EmptyBorder(20, 20, 20, 20));
         
-        root.add(createHeader(), BorderLayout.NORTH);
         root.add(createForm(), BorderLayout.CENTER);
         root.add(createActions(), BorderLayout.SOUTH);
 
@@ -89,18 +88,6 @@ public class BarangayDetailsPanel extends JPanel {
             collectionDayField.setText(currentBarangay.getCollectionDay() != null ? currentBarangay.getCollectionDay() : "");
             statusComboBox.setSelectedItem(currentBarangay.getStatus());
         }
-    }
-
-    private JPanel createHeader() {
-        JPanel header = new JPanel(new BorderLayout());
-        header.setOpaque(false);
-
-        JLabel title = new JLabel("Barangay Details");
-        title.setFont(SUBTITLEBOLD.deriveFont(24f));
-        title.setForeground(TEXTCOLOR);
-
-        header.add(title, BorderLayout.WEST);
-        return header;
     }
 
     private JPanel createForm() {
