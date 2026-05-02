@@ -1,59 +1,21 @@
 package main.ui.admin_pages;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.GridLayout;
-import java.awt.Insets;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.util.ArrayList;
+import java.awt.*;
 import java.util.List;
-import javax.imageio.ImageIO;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JTextArea;
-import javax.swing.SwingConstants;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import main.model.Barangay;
-import main.model.Complaint;
-import main.model.PopupItem;
-import main.model.Report;
-import main.model.Request;
-import main.model.Truck;
-import main.service.BarangayService;
-import main.service.ComplaintService;
-import main.service.ReportService;
-import main.service.RequestService;
-import static main.style.SystemStyle.BGCOLOR1;
-import static main.style.SystemStyle.BGCOLOR2;
-import static main.style.SystemStyle.Card;
-import static main.style.SystemStyle.GradientPaint;
-import static main.style.SystemStyle.SIDEBAR;
-import static main.style.SystemStyle.SUBTITLEBOLD;
-import static main.style.SystemStyle.roundPanel;
+
+import main.model.*;
+import main.service.*;
 import main.store.DataTopics;
-import static main.style.SystemStyle.SELECTED;
-import static main.style.SystemStyle.TEXTCOLOR;
-import static main.style.SystemStyle.WHITE;
-import static main.style.SystemStyle.createCapsuleLabel;
-import static main.style.SystemStyle.createFormButton;
-import static main.style.SystemStyle.createTransparentPanel;
-import main.ui.components.CustomButton;
-import main.ui.components.Header;
-import main.ui.components.ReactivePanel;
-import main.ui.components.ScrollablePanel;
-import main.ui.components.ScrollableTable;
-import main.ui.components.SummaryCards;
+import main.ui.components.*;
+
+import static main.style.SystemStyle.*;
+import static main.ui.components.CustomButton.createButton;
+import main.ui.dialogs.PersonnelFormDialog;
+import main.ui.dialogs.TeamFormDialog;
+import main.ui.dialogs.TruckFormDialog;
+
 public class BarangayPanel extends ReactivePanel {
 
     private static final String BARANGAY_VIEW = "Barangay";
@@ -66,7 +28,7 @@ public class BarangayPanel extends ReactivePanel {
     private final ComplaintService complaintService = new ComplaintService();
     private final RequestService requestService = new RequestService();
 
-    private final java.awt.CardLayout contentLayout = new java.awt.CardLayout();
+    private final CardLayout contentLayout = new CardLayout();
     private final JPanel contentPanel = Card(12);
     private final JPanel summaryPanel = new JPanel(new BorderLayout());
 
@@ -76,30 +38,34 @@ public class BarangayPanel extends ReactivePanel {
         setLayout(new BorderLayout());
         setOpaque(false);
 
-        listen(DataTopics.BARANGAYS, this::refreshCurrentView);
-        listen(DataTopics.REPORTS, this::refreshCurrentView);
-        listen(DataTopics.COMPLAINTS, this::refreshCurrentView);
-        listen(DataTopics.REQUESTS, this::refreshCurrentView);
+        listen(DataTopics.BARANGAYS, this::refreshUI);
+        listen(DataTopics.REPORTS, this::refreshUI);
+        listen(DataTopics.COMPLAINTS, this::refreshUI);
+        listen(DataTopics.REQUESTS, this::refreshUI);
 
-        add(new Header("Barangay"), BorderLayout.NORTH);
+        add(new Header("Barangay Management"), BorderLayout.NORTH);
         add(createMainContent(), BorderLayout.CENTER);
     }
 
+    // =========================================================
+    // MAIN
+    // =========================================================
+
     private JPanel createMainContent() {
-        JPanel content = GradientPaint(BGCOLOR1, BGCOLOR2, 0, false, 20);
-        content.setLayout(new BorderLayout(0, 10));
-        content.setBorder(new EmptyBorder(20, 20, 20, 20));
+        JPanel root = GradientPaint(BGCOLOR1, BGCOLOR2, 0, false, 20);
+        root.setLayout(new BorderLayout(0, 10));
+        root.setBorder(new EmptyBorder(20, 20, 20, 20));
 
         summaryPanel.setOpaque(false);
         summaryPanel.add(createSummary(currentView), BorderLayout.CENTER);
 
-        contentPanel.setBorder(new EmptyBorder(0, 0, 0, 4));
         contentPanel.setLayout(contentLayout);
         rebuildViews();
 
-        content.add(summaryPanel, BorderLayout.NORTH);
-        content.add(contentPanel, BorderLayout.CENTER);
-        return content;
+        root.add(summaryPanel, BorderLayout.NORTH);
+        root.add(contentPanel, BorderLayout.CENTER);
+
+        return root;
     }
 
     private void rebuildViews() {
@@ -111,256 +77,184 @@ public class BarangayPanel extends ReactivePanel {
         contentLayout.show(contentPanel, currentView);
     }
 
+    // =========================================================
+    // VIEWS
+    // =========================================================
+
     private JPanel createBarangayView() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setOpaque(false);
+
         panel.add(createHeader("Barangay Management"), BorderLayout.NORTH);
 
         ScrollableTable table = new ScrollableTable(
-                "Barangay", "Purok", "Population", "Household", "Collection Day", "Status", "Action"
+                "Barangay", "Purok", "Population", "Households", "Collection Day", "Status"
         );
 
-        for (Barangay barangay : barangayService.getAllBarangays()) {
+        for (Barangay b : barangayService.getAllBarangays()) {
             table.addRow(
-                    safe(barangay.getBarangayName()),
-                    barangay.getPurokCount(),
-                    barangay.getPopulation(),
-                    barangay.getBarangayHousehold(),
-                    safe(barangay.getCollectionDay()),
-                    safe(barangay.getStatus(), "Active")
+                    safe(b.getBarangayName()),
+                    b.getPurokCount(),
+                    b.getPopulation(),
+                    b.getBarangayHousehold(),
+                    safe(b.getCollectionDay()),
+                    safe(b.getStatus(), "Active")
             );
         }
 
         panel.add(table, BorderLayout.CENTER);
         return panel;
-    }
-    
-    private JPanel createReport() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setOpaque(false);
-        panel.add(createHeader("Truck Management"), BorderLayout.NORTH);
-
-        JPanel container = new JPanel(new GridBagLayout());
-        container.setOpaque(false);
-        container.setBorder(new EmptyBorder(10, 10, 10, 10));
-
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.weightx = 1;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(0, 0, 10, 0); // spacing between cards
-
-        int y = 0;
-        for (Report report : reportService.getAllReports()) {
-            gbc.gridy = y++;
-            container.add(createReportCard(report), gbc);
-        }
-
-        ScrollablePanel scrollable = new ScrollablePanel(container);
-        panel.add(scrollable, BorderLayout.CENTER);
-
-        return panel;
-    }
-    
-    private JPanel createReportCard(Report report) {
-        JPanel card = Card(20);
-        card.setLayout(new BorderLayout(15, 10));
-        card.setBorder(new EmptyBorder(15, 15, 15, 15));
-        card.setBackground(WHITE);
-        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 130));
-        
-        
-        return card;
-    }
-    
-    private JPanel createComplaintView() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setOpaque(false);
-        panel.add(createHeader("Complaint Management"), BorderLayout.NORTH);
-
-        JPanel container = new JPanel(new GridBagLayout());
-        container.setOpaque(false);
-        container.setBorder(new EmptyBorder(10, 10, 10, 10));
-
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.weightx = 1;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(0, 0, 10, 0);
-
-        int y = 0;
-        for (Complaint complaint : complaintService.getAllComplaints()) {
-            gbc.gridy = y++;
-            container.add(createComplaintCard(complaint), gbc);
-        }
-
-        ScrollablePanel scrollable = new ScrollablePanel(container);
-        panel.add(scrollable, BorderLayout.CENTER);
-
-        return panel;
-    }
-    
-    private JPanel createComplaintCard(Complaint complaint) {
-
-        JPanel card = Card(20);
-        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
-        card.setBorder(new EmptyBorder(15, 15, 15, 15));
-        card.setBackground(WHITE);
-        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 260));
-
-        // =========================================================
-        // TOP SECTION
-        // =========================================================
-        JPanel top = createTransparentPanel(new BorderLayout());
-
-        JLabel id = new JLabel("Report no: " + complaint.getComplaintId());
-        JLabel status = createCapsuleLabel(
-                complaint.getStatus(),
-                Color.LIGHT_GRAY,
-                TEXTCOLOR
-        );
-
-        top.add(id, BorderLayout.WEST);
-        top.add(status, BorderLayout.EAST);
-
-        // =========================================================
-        // IMAGE
-        // =========================================================
-        JLabel image = createImageLabel(complaint.getProof());
-        image.setPreferredSize(new Dimension(0, 120));
-        image.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
-        image.setHorizontalAlignment(SwingConstants.CENTER);
-
-        // =========================================================
-        // DETAILS SECTION
-        // =========================================================
-        JPanel details = createTransparentPanel();
-        details.setLayout(new BoxLayout(details, BoxLayout.Y_AXIS));
-
-        JLabel barangay = new JLabel("Barangay: " + complaint.getBarangayName());
-        JLabel location = new JLabel("Location: " + complaint.getLocation());
-        JLabel date = new JLabel("Date: " + complaint.getCreatedAt());
-
-        JTextArea description = new JTextArea(complaint.getMessage());
-        description.setLineWrap(true);
-        description.setWrapStyleWord(true);
-        description.setEditable(false);
-        description.setOpaque(false);
-        description.setBorder(null);
-
-        details.add(barangay);
-        details.add(location);
-        details.add(date);
-        details.add(description);
-
-        // =========================================================
-        // BUTTONS
-        // =========================================================
-        JPanel btns = createTransparentPanel(new GridLayout(1, 2, 10, 0));
-
-        JButton contact = createFormButton("Contact", false);
-        JButton view = createFormButton("Review", false);
-
-        btns.add(contact);
-        btns.add(view);
-
-        // =========================================================
-        // CARD ASSEMBLY
-        // =========================================================
-        card.add(top);
-        card.add(Box.createVerticalStrut(10));
-        card.add(image);
-        card.add(Box.createVerticalStrut(10));
-        card.add(details);
-        card.add(Box.createVerticalStrut(10));
-        card.add(btns);
-
-        return card;
     }
 
     private JPanel createReportView() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setOpaque(false);
+
         panel.add(createHeader("Report Management"), BorderLayout.NORTH);
 
-        ScrollableTable table = new ScrollableTable(
-                "Barangay", "Message", "Status", "Created", "Read", "Action"
-        );
+        JPanel grid = new JPanel(new GridLayout(0, 2, 15, 15)); // same as Team
+        grid.setOpaque(false);
+        grid.setBorder(new EmptyBorder(10, 10, 10, 10));
 
-        for (Report report : reportService.getAllReports()) {
-            List<PopupItem> actions = new ArrayList<>();
-            actions.add(new PopupItem("Review", "Open report review", () -> reviewReport(report)));
-            actions.add(new PopupItem("Delete", "Remove this report", () -> deleteReport(report)));
-
-            table.addRowWithAction(
-                    safe(report.getBarangayName(), "Unassigned"),
-                    summarize(report.getMessage()),
-                    safe(report.getStatus(), "Under Review"),
-                    report.getCreatedAt() == null ? "N/A" : report.getCreatedAt().toString(),
-                    report.isRead() ? "Yes" : "No",
-                    actions
-            );
+        for (Report r : reportService.getAllReports()) {
+            grid.add(createReportCard(r));
         }
 
-        panel.add(table, BorderLayout.CENTER);
+        ScrollablePanel scroll = new ScrollablePanel(grid);
+        panel.add(scroll, BorderLayout.CENTER);
+
         return panel;
     }
-
-    private JPanel createComplaint() {
+    
+    private JPanel createComplaintView() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setOpaque(false);
+
         panel.add(createHeader("Complaint Management"), BorderLayout.NORTH);
 
-        ScrollableTable table = new ScrollableTable(
-                "Location", "Message", "Status", "Created", "Read", "Action"
-        );
+        JPanel grid = new JPanel(new GridLayout(0, 2, 15, 15));
+        grid.setOpaque(false);
+        grid.setBorder(new EmptyBorder(10, 10, 10, 10));
 
-        for (Complaint complaint : complaintService.getAllComplaints()) {
-            List<PopupItem> actions = new ArrayList<>();
-            actions.add(new PopupItem("Review", "Open complaint review", () -> reviewComplaint(complaint)));
-            actions.add(new PopupItem("Delete", "Remove this complaint", () -> deleteComplaint(complaint)));
-
-            table.addRowWithAction(
-                    safe(complaint.getLocation(), "N/A"),
-                    summarize(complaint.getMessage()),
-                    safe(complaint.getStatus(), "Under Review"),
-                    complaint.getCreatedAt() == null ? "N/A" : complaint.getCreatedAt().toString(),
-                    complaint.isRead() ? "Yes" : "No",
-                    actions
-            );
+        for (Complaint c : complaintService.getAllComplaints()) {
+            grid.add(createComplaintCard(c));
         }
 
-        panel.add(table, BorderLayout.CENTER);
+        ScrollablePanel scroll = new ScrollablePanel(grid);
+        panel.add(scroll, BorderLayout.CENTER);
+
         return panel;
     }
-
+    
     private JPanel createRequestView() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setOpaque(false);
+
         panel.add(createHeader("Request Management"), BorderLayout.NORTH);
 
-        ScrollableTable table = new ScrollableTable(
-                "Location", "Message", "Status", "Created", "Read", "Action"
-        );
+        JPanel grid = new JPanel(new GridLayout(0, 2, 15, 15));
+        grid.setOpaque(false);
+        grid.setBorder(new EmptyBorder(10, 10, 10, 10));
 
-        for (Request request : requestService.getAllRequests()) {
-            List<PopupItem> actions = new ArrayList<>();
-            actions.add(new PopupItem("Review", "Open request review", () -> reviewRequest(request)));
-            actions.add(new PopupItem("Delete", "Remove this request", () -> deleteRequest(request)));
-
-            table.addRowWithAction(
-                    safe(request.getLocation(), "N/A"),
-                    summarize(request.getMessage()),
-                    safe(request.getStatus(), "Under Review"),
-                    request.getCreatedAt() == null ? "N/A" : request.getCreatedAt().toString(),
-                    request.isRead() ? "Yes" : "No",
-                    actions
-            );
+        for (Request r : requestService.getAllRequests()) {
+            grid.add(createRequestCard(r));
         }
 
-        panel.add(table, BorderLayout.CENTER);
+        ScrollablePanel scroll = new ScrollablePanel(grid);
+        panel.add(scroll, BorderLayout.CENTER);
+
         return panel;
     }
+
+    // =========================================================
+    // CARD LIST
+    // =========================================================
+
+    private <T> JPanel buildCardList(List<T> list, java.util.function.Function<T, JPanel> mapper) {
+        JPanel container = new JPanel(new GridBagLayout());
+        container.setOpaque(false);
+        container.setBorder(new EmptyBorder(10, 10, 10, 10));
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.weightx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        int y = 0;
+        for (T item : list) {
+            gbc.gridy = y++;
+            container.add(mapper.apply(item), gbc);
+        }
+
+        return new ScrollablePanel(container);
+    }
+
+    // =========================================================
+    // CARDS (CLEAN MANAGEMENT STYLE)
+    // =========================================================
+
+    private JPanel createBaseCard(String title, String status) {
+        JPanel card = Card(20);
+        card.setLayout(new BorderLayout(10, 10));
+        card.setBorder(new EmptyBorder(15, 15, 15, 15));
+        card.setBackground(WHITE);
+
+        JLabel titleLbl = new JLabel(title);
+        titleLbl.setFont(SUBTITLEBOLD);
+
+        JLabel statusLbl = new JLabel(safe(status, "Pending"));
+        statusLbl.setOpaque(true);
+        statusLbl.setBorder(new EmptyBorder(5, 10, 5, 10));
+        statusLbl.setBackground(new Color(220, 252, 231));
+        statusLbl.setForeground(new Color(22, 163, 74));
+
+        JPanel top = new JPanel(new BorderLayout());
+        top.setOpaque(false);
+        top.add(titleLbl, BorderLayout.WEST);
+        top.add(statusLbl, BorderLayout.EAST);
+
+        card.add(top, BorderLayout.NORTH);
+
+        return card;
+    }
+
+    private JPanel createReportCard(Report r) {
+        JPanel card = createBaseCard("Report #" + r.getReportId(), r.getStatus());
+
+        JPanel body = vertical();
+        body.add(new JLabel("Barangay: " + safe(r.getBarangayName())));
+        body.add(new JLabel("Date: " + r.getCreatedAt()));
+        body.add(new JLabel("Message: " + safe(r.getMessage())));
+
+        card.add(body, BorderLayout.CENTER);
+        return card;
+    }
+
+    private JPanel createComplaintCard(Complaint c) {
+        JPanel card = createBaseCard("Complaint #" + c.getComplaintId(), c.getStatus());
+
+        JPanel body = vertical();
+        body.add(new JLabel("Location: " + safe(c.getLocation())));
+        body.add(new JLabel("Message: " + safe(c.getMessage())));
+
+        card.add(body, BorderLayout.CENTER);
+        return card;
+    }
+
+    private JPanel createRequestCard(Request r) {
+        JPanel card = createBaseCard("Request #" + r.getRequestId(), r.getStatus());
+
+        JPanel body = vertical();
+        body.add(new JLabel("Type: " + safe(r.getType())));
+        body.add(new JLabel("Location: " + safe(r.getLocation())));
+
+        card.add(body, BorderLayout.CENTER);
+        return card;
+    }
+
+    // =========================================================
+    // HEADER (MATCH MANAGEMENT)
+    // =========================================================
 
     private JPanel createHeader(String titleText) {
         JPanel header = Card(12, 0, SIDEBAR);
@@ -372,174 +266,159 @@ public class BarangayPanel extends ReactivePanel {
         title.setFont(SUBTITLEBOLD);
 
         JPanel navBar = roundPanel(50);
-        navBar.setLayout(new GridLayout(1, 4, 5, 0));
-        navBar.setPreferredSize(new Dimension(560, 35));
+        navBar.setLayout(new GridLayout(1, 3, 5, 0));
+        navBar.setPreferredSize(new Dimension(500, 35));
 
         for (String view : new String[]{BARANGAY_VIEW, REPORT_VIEW, COMPLAINT_VIEW, REQUEST_VIEW}) {
-            CustomButton button = new CustomButton(
-                    view,
-                    "",
-                    "",
-                    20,
-                    80,
-                    25,
-                    80,
-                    25,
+            CustomButton btn = new CustomButton(
+                    view, "", "", 20, 70, 25, 70, 25,
                     currentView.equals(view) ? SELECTED : WHITE,
                     currentView.equals(view) ? SELECTED : WHITE,
                     currentView.equals(view) ? WHITE : TEXTCOLOR,
                     currentView.equals(view) ? WHITE : TEXTCOLOR,
-                    false,
-                    true
+                    false, true
             );
-            button.addActionListener(event -> switchView(view));
-            navBar.add(button);
+            btn.addActionListener(e -> switchView(view));
+            navBar.add(btn);
         }
 
         JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         right.setOpaque(false);
         right.add(navBar);
+        
+        /*JButton addButton = createButton("Add", "add.png", "add-white.png", 20);
+        addButton.setPreferredSize(new Dimension(100, 35));
+        addButton.addActionListener(event -> openCreateDialog());
+        right.add(addButton);*/
 
         header.add(title, BorderLayout.WEST);
         header.add(right, BorderLayout.EAST);
+
         return header;
     }
 
-    private SummaryCards createSummary(String type) {
-        if (REPORT_VIEW.equals(type)) {
+    private SummaryCards createSummary(String view) {
+        if (REPORT_VIEW.equals(view)) {
+            List<Report> list = reportService.getAllReports();
             return new SummaryCards(
-                    new String[]{"Total Reports", "Reviewed", "Unread"},
+                    new String[]{"Total Reports", "Resolved", "Pending"},
                     new int[]{
-                        reportService.getTotalReportCount(),
-                        reportService.getReviewedReportCount(),
-                        reportService.getUnreadReportCount()
+                            list.size(),
+                            (int) list.stream().filter(r -> "Resolved".equalsIgnoreCase(r.getStatus())).count(),
+                            (int) list.stream().filter(r -> "Pending".equalsIgnoreCase(r.getStatus())).count()
                     },
-                    new String[]{"All reports", "Approved or rejected", "Needs review"},
-                    icons(),
-                    colors()
+                    new String[]{"All reports", "Completed", "Needs action"},
+                    icons(), colors()
             );
         }
 
-        if (COMPLAINT_VIEW.equals(type)) {
+        if (COMPLAINT_VIEW.equals(view)) {
+            List<Complaint> list = complaintService.getAllComplaints();
             return new SummaryCards(
-                    new String[]{"Total Complaints", "Reviewed", "Unread"},
+                    new String[]{"Total Complaints", "Resolved", "Pending"},
                     new int[]{
-                        complaintService.getTotalComplaintCount(),
-                        complaintService.getReviewedComplaintCount(),
-                        complaintService.getUnreadComplaintCount()
+                            list.size(),
+                            (int) list.stream().filter(c -> "Resolved".equalsIgnoreCase(c.getStatus())).count(),
+                            (int) list.stream().filter(c -> "Pending".equalsIgnoreCase(c.getStatus())).count()
                     },
-                    new String[]{"All complaints", "Approved or rejected", "Needs review"},
-                    icons(),
-                    colors()
+                    new String[]{"All complaints", "Handled", "Waiting"},
+                    icons(), colors()
             );
         }
 
-        if (REQUEST_VIEW.equals(type)) {
+        if (REQUEST_VIEW.equals(view)) {
+            List<Request> list = requestService.getAllRequests();
             return new SummaryCards(
-                    new String[]{"Total Requests", "Reviewed", "Unread"},
+                    new String[]{"Total Requests", "Approved", "Pending"},
                     new int[]{
-                        requestService.getTotalRequestCount(),
-                        requestService.getReviewedRequestCount(),
-                        requestService.getUnreadRequestCount()
+                            list.size(),
+                            (int) list.stream().filter(r -> "Approved".equalsIgnoreCase(r.getStatus())).count(),
+                            (int) list.stream().filter(r -> "Pending".equalsIgnoreCase(r.getStatus())).count()
                     },
-                    new String[]{"All requests", "Approved or rejected", "Needs review"},
-                    icons(),
-                    colors()
+                    new String[]{"All requests", "Processed", "Waiting"},
+                    icons(), colors()
             );
         }
 
+        List<Barangay> list = barangayService.getAllBarangays();
         return new SummaryCards(
-                new String[]{"Scheduled Collections", "Total Barangays", "Households"},
+                new String[]{"Total Barangays", "Active", "Inactive"},
                 new int[]{
-                    barangayService.getTotalScheduleBarangay(),
-                    barangayService.getTotalBarangayCount(),
-                    barangayService.getTotalHousehold()
+                        list.size(),
+                        (int) list.stream().filter(b -> "Active".equalsIgnoreCase(b.getStatus())).count(),
+                        (int) list.stream().filter(b -> "Inactive".equalsIgnoreCase(b.getStatus())).count()
                 },
-                new String[]{"Scheduled areas", "Registered barangays", "Service coverage"},
-                icons(),
-                colors()
+                new String[]{"Coverage", "Operational", "Inactive"},
+                BrgyIcons(), colors()
         );
     }
 
     private void switchView(String view) {
         currentView = view;
-        refreshCurrentView();
+        refreshUI();
     }
 
-    private void refreshCurrentView() {
+    private void refreshUI() {
         SwingUtilities.invokeLater(() -> {
             summaryPanel.removeAll();
             summaryPanel.add(createSummary(currentView), BorderLayout.CENTER);
-            summaryPanel.revalidate();
-            summaryPanel.repaint();
 
             rebuildViews();
-            contentPanel.revalidate();
-            contentPanel.repaint();
+            revalidate();
+            repaint();
         });
     }
 
-    private String summarize(String value) {
-        String safeValue = safe(value, "");
-        return safeValue.length() > 36 ? safeValue.substring(0, 33) + "..." : safeValue;
+    private JPanel vertical() {
+        JPanel p = new JPanel();
+        p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
+        p.setOpaque(false);
+        return p;
     }
 
-    private String safe(String value) {
-        return safe(value, "");
+    private String safe(String v) {
+        return v == null ? "" : v;
     }
 
-    private String safe(String value, String fallback) {
-        return value == null || value.trim().isEmpty() ? fallback : value;
+    private String safe(String v, String def) {
+        return (v == null || v.isEmpty()) ? def : v;
     }
 
+    private String[] BrgyIcons() {
+        return new String[]{"calendar.png", "circle-check.png", "circle-alert.png"};
+    }
+    
     private String[] icons() {
         return new String[]{"calendar.png", "circle-check.png", "circle-alert.png"};
     }
 
     private Color[] colors() {
         return new Color[]{
-            new Color(139, 92, 246, 20),
-            new Color(59, 130, 246, 20),
-            new Color(232, 114, 82, 20)
+                new Color(139, 92, 246, 20),
+                new Color(59, 130, 246, 20),
+                new Color(232, 114, 82, 20)
         };
     }
     
-    private PopupItem reviewRequest(Request request) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    private PopupItem deleteRequest(Request request) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    private PopupItem reviewComplaint(Complaint complaint) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    private PopupItem deleteComplaint(Complaint complaint) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    private PopupItem reviewReport(Report report) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    private PopupItem deleteReport(Report report) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-    
-    private static JLabel createImageLabel(byte[] imageBytes) {
-        try {
-            ByteArrayInputStream bis = new ByteArrayInputStream(imageBytes);
-            BufferedImage img = ImageIO.read(bis);
-
-            ImageIcon icon = new ImageIcon(img);
-
-            return new JLabel(icon);
-
-        } catch (IOException e) {
-            e.printStackTrace();
+    /*private void openCreateDialog() {
+        JFrame parent = (JFrame) SwingUtilities.getWindowAncestor(this);
+        switch (currentView) {
+            case BARANGAY_VIEW:
+                BarangayFormDialog brgydialog = new BarangayDialogForm(parent, null);
+                brgydialog.setVisible(true);
+                break;
+            case REPORT_VIEW:
+                ReportFormDialog reportdialog = new ReportFormDialog(parent, null);
+                reportdialog.setVisible(true);
+                break;
+            case COMPLAINT_VIEW:
+                ComaplaintFormDialog complaintDialog = new ComaplaintFormDialog(parent, null);
+                complaintDialog.setVisible(true);
+                break;
+            case REQUEST_VIEW:
+                RequestFormDialog requestDialog = new RequestFormDialog(parent, null);
+                requestDialog.setVisible(true);
+                break;
         }
-        return new JLabel("No Image");
-    }
+    }*/
 }

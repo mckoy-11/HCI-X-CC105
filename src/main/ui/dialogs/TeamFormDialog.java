@@ -218,11 +218,13 @@ public final class TeamFormDialog extends BaseFormDialog {
     private void bindEvents() {
         leaderCombo.addActionListener(e -> {
             updateLeaderDriverAvailability();
+            updateCollectorAvailability();
             updateMemberCount();
         });
 
         driverCombo.addActionListener(e -> {
             updateLeaderDriverAvailability();
+            updateCollectorAvailability();
             updateMemberCount();
         });
     }
@@ -274,6 +276,36 @@ public final class TeamFormDialog extends BaseFormDialog {
 
         if (leader != null && !leader.equals(driver)) leaderCombo.setSelectedItem(leader);
         if (driver != null && !driver.equals(leader)) driverCombo.setSelectedItem(driver);
+    }
+    
+    private void updateCollectorAvailability() {
+        Personnel leader = (Personnel) leaderCombo.getSelectedItem();
+        Personnel driver = (Personnel) driverCombo.getSelectedItem();
+        
+        for (Integer personnelId : collectorCheckboxes.keySet()) {
+            JCheckBox cb = collectorCheckboxes.get(personnelId);
+            Personnel p = findPersonnelById(personnelId);
+            
+            if (p != null) {
+                boolean isLeaderOrDriver = (leader != null && leader.getId() == p.getId()) || 
+                                          (driver != null && driver.getId() == p.getId());
+                
+                // Disable checkbox if this person is leader or driver
+                cb.setEnabled(!isLeaderOrDriver);
+                
+                // Uncheck if they were just selected as leader/driver
+                if (isLeaderOrDriver && cb.isSelected()) {
+                    cb.setSelected(false);
+                }
+            }
+        }
+    }
+    
+    private Personnel findPersonnelById(int id) {
+        for (Personnel p : personnelList) {
+            if (p.getId() == id) return p;
+        }
+        return null;
     }
 
     private Personnel findPersonnelByName(String name) {

@@ -6,7 +6,6 @@ import main.ui.admin_pages.HomePanel;
 import main.ui.admin_pages.SchedulePanel;
 import main.ui.admin_pages.BarangayPanel;
 import main.ui.admin_pages.UsersPanel;
-import main.ui.admin_pages.SettingsPanel;
 
 import main.ui.components.Sidebar;
 
@@ -20,7 +19,7 @@ public final class MenroFrame extends JFrame {
     
     private final String[] SIDEBARLABEL = { 
         "Home", "Schedule", "Management", 
-        "Barangay", "Users", "Settings" 
+        "Barangay", "Users"
     };
 
     private final String[] SIDEBARICONS = {
@@ -29,7 +28,6 @@ public final class MenroFrame extends JFrame {
         "user-check-white.png", 
         "pin-house-white.png",
         "user-cog-white.png",
-        "settings-white.png"
     };
     
     private final String[] SIDEBARICONHOVER = {
@@ -38,7 +36,6 @@ public final class MenroFrame extends JFrame {
         "user-check.png",
         "pin-house.png",
         "user-cog.png",
-        "settings.png"
     };
 
     private final AppRouter router;
@@ -58,7 +55,6 @@ public final class MenroFrame extends JFrame {
         router.register("Management", new Management());
         router.register("Barangay",   new BarangayPanel());
         router.register("Users",      new UsersPanel());
-        router.register("Settings",   new SettingsPanel());
 
         Sidebar sidebar = new Sidebar(
             router,

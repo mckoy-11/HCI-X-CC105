@@ -6,6 +6,9 @@ import java.awt.event.*;
 import static main.style.SystemStyle.*;
 
 import javax.swing.*;
+import main.app.MainFrame;
+import main.app.WelcomePage;
+import main.model.UserSession;
 import main.style.SystemStyle.RoundedPanel;
 
 import main.ui.AppRouter;
@@ -64,16 +67,18 @@ public class Sidebar extends JPanel implements ActionListener {
             btn.addActionListener(this);
 
             sidebarBtn[i] = btn;
-
-            if (labels[i].equals("Settings")) {
-                add(Box.createVerticalGlue());
-                add(separator(240));
-                add(Box.createVerticalStrut(5));
-            }
-
+            
             add(btn);
             add(Box.createVerticalStrut(5));
         }
+        
+        CustomButton logout = createSidebarButton("Logout", "settings-white.png", "settings.png");
+        logout.addActionListener(event -> logout());
+        add(Box.createVerticalGlue());
+        add(logout);
+        add(Box.createVerticalStrut(5));
+        
+        
 
         if (sidebarBtn.length > 0) {
             activeButton = sidebarBtn[0];
@@ -110,6 +115,26 @@ public class Sidebar extends JPanel implements ActionListener {
         btn.setIconTextGap(10);
 
         return btn;
+    }
+
+    private void logout() {
+        int confirm = JOptionPane.showConfirmDialog(
+                null,
+                "Logout and return to welcome screen?",
+                "Logout",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE
+        );
+        if (confirm != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        UserSession.logout();
+        Window top = SwingUtilities.getWindowAncestor(this);
+        if (top instanceof JFrame) {
+            ((JFrame) top).dispose();
+        }
+        SwingUtilities.invokeLater(MainFrame::new);
     }
 
     @Override

@@ -26,7 +26,6 @@ public final class TruckFormDialog extends BaseFormDialog {
     private final JTextField capacityField = styleInput(new JTextField());
     private final JComboBox<String> truckTypeComboBox;
     private final JComboBox<String> statusComboBox;
-    private final JComboBox<Team> teamComboBox;
     
     private final Truck existingTruck;
     private final boolean isEditMode;
@@ -52,18 +51,14 @@ public final class TruckFormDialog extends BaseFormDialog {
         this.isEditMode = truck != null;
         this.teamToAssign = teamToAssign;
         
-        // Initialize combo boxes - truck type, status, and team
+        // Initialize combo boxes - truck type and status
         this.truckTypeComboBox = styleComboBox(new JComboBox<>(new String[]{"Compactor", "Dump Truck", "Garbage Truck", "Container Carrier", "Other"}));
         this.statusComboBox = styleComboBox(new JComboBox<>(new String[]{"Active", "Inactive", "Maintenance", "Decommissioned"}));
-        this.teamComboBox = styleComboBox(new JComboBox<>());
         
-        // Default status when adding = Active
+        // Default status when adding = Unassigned
         if (!isEditMode) {
             statusComboBox.setSelectedItem("Active");
         }
-        
-        // Load teams and populate data
-        loadTeams();
         populateData();
         
         // Initialize form body after fields are set up
@@ -88,10 +83,6 @@ public final class TruckFormDialog extends BaseFormDialog {
         
         // Status
         addFormField(gbc, "Status", statusComboBox);
-        gbc.gridy++;
-        
-        // Assigned Team (dropdown for team selection)
-        addFormField(gbc, "Assigned Team", teamComboBox);
         
         return null;
     }
@@ -109,20 +100,7 @@ public final class TruckFormDialog extends BaseFormDialog {
             truck.setPlateNumber(plateNumberField.getText().trim().toUpperCase());
             truck.setTruckType((String) truckTypeComboBox.getSelectedItem());
             truck.setCapacity(capacityField.getText().trim());
-            truck.setStatus((String) statusComboBox.getSelectedItem());
-            
-            // Set team - from dropdown selection or teamToAssign parameter
-            Team selectedTeam = (Team) teamComboBox.getSelectedItem();
-            if (teamToAssign != null) {
-                // Override: use team from constructor (when creating from team dialog)
-                truck.setAssignedTeam(teamToAssign.getTeamName());
-            } else if (selectedTeam != null) {
-                // Use selected team from dropdown
-                truck.setAssignedTeam(selectedTeam.getTeamName());
-            } else {
-                // No team selected - unassign
-                truck.setAssignedTeam(null);
-            }
+            truck.setStatus("Unassigned");
             
             boolean success;
             if (isEditMode) {
@@ -145,51 +123,19 @@ public final class TruckFormDialog extends BaseFormDialog {
         }
     }
     
-    private void loadTeams() {
-        teamComboBox.removeAllItems();
-        teamComboBox.addItem(null); // For unassigned
-        
-        List<Team> teams = teamService.getAllTeams();
-        for (Team team : teams) {
-            teamComboBox.addItem(team);
-        }
-    }
-    
     private void populateData() {
         if (existingTruck != null) {
             plateNumberField.setText(existingTruck.getPlateNumber());
-            capacityField.setText(existingTruck.getCapacity());
+            capacityField.setText(existingTruck.getCapacity() != null ? existingTruck.getCapacity() : "");
             
             // Select truck type
             if (existingTruck.getTruckType() != null) {
                 truckTypeComboBox.setSelectedItem(existingTruck.getTruckType());
             }
             
-            // Select assigned team
-            if (existingTruck.getAssignedTeam() != null) {
-                for (int i = 0; i < teamComboBox.getItemCount(); i++) {
-                    Team team = teamComboBox.getItemAt(i);
-                    if (team != null && team.getTeamName().equals(existingTruck.getAssignedTeam())) {
-                        teamComboBox.setSelectedIndex(i);
-                        break;
-                    }
-                }
-            }
-            
             // Select status
             if (existingTruck.getStatus() != null) {
                 statusComboBox.setSelectedItem(existingTruck.getStatus());
-            }
-        } else {
-            // When adding new truck with teamToAssign, select that team
-            if (teamToAssign != null) {
-                for (int i = 0; i < teamComboBox.getItemCount(); i++) {
-                    Team team = teamComboBox.getItemAt(i);
-                    if (team != null && team.getTeamName().equals(teamToAssign.getTeamName())) {
-                        teamComboBox.setSelectedIndex(i);
-                        break;
-                    }
-                }
             }
         }
     }

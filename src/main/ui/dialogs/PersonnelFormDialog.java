@@ -27,8 +27,6 @@ public final class PersonnelFormDialog extends BaseFormDialog {
     private final JTextField addressField = styleInput(new JTextField());
     private final JComboBox<String> genderComboBox;
     private final JComboBox<String> roleComboBox;
-    private final JComboBox<Team> teamComboBox;
-    private final JComboBox<String> statusComboBox;
     
     private final Personnel existingPersonnel;
     private final boolean isEditMode;
@@ -41,16 +39,8 @@ this.isEditMode = personnel != null;
         // Initialize combo boxes
         this.genderComboBox = styleComboBox(new JComboBox<>(new String[]{"Male", "Female", "Other"}));
         this.roleComboBox = styleComboBox(new JComboBox<>(new String[]{"Driver", "Helper", "Collector", "Supervisor", "Admin"}));
-        this.teamComboBox = styleComboBox(new JComboBox<>());
-        this.statusComboBox = styleComboBox(new JComboBox<>(new String[]{"Active", "Inactive"}));
         
-        // Default status when adding = Active
-        if (!isEditMode) {
-            statusComboBox.setSelectedItem("Active");
-        }
-        
-        // Load teams and populate data
-        loadTeams();
+        // Populate data
         populateData();
         
         // Initialize form body after fields are set up
@@ -79,10 +69,6 @@ this.isEditMode = personnel != null;
         
         // Address (full-width)
         addFormFieldFull(gbc, "Address", addressField);
-        gbc.gridy++;
-        
-        // Team and Status
-        addFormRow(gbc, "Team", teamComboBox, "Status", statusComboBox);
         
         return null;
     }
@@ -102,17 +88,13 @@ this.isEditMode = personnel != null;
             personnel.setAddress(addressField.getText().trim());
             personnel.setGender((String) genderComboBox.getSelectedItem());
             personnel.setRole((String) roleComboBox.getSelectedItem());
-            personnel.setStatus((String) statusComboBox.getSelectedItem());
+            personnel.setStatus("Unassigned");
             
             // Parse age
             String ageText = ageField.getText().trim();
             if (!ageText.isEmpty()) {
                 personnel.setAge(Integer.parseInt(ageText));
             }
-            
-            // Set team
-            Team selectedTeam = (Team) teamComboBox.getSelectedItem();
-            personnel.setTeam(selectedTeam != null ? selectedTeam.getTeamName() : null);
             
             boolean success;
             if (isEditMode) {
@@ -135,46 +117,40 @@ this.isEditMode = personnel != null;
         }
     }
     
-    private void loadTeams() {
-        teamComboBox.removeAllItems();
-        teamComboBox.addItem(null); // For unassigned
-        List<Team> teams = teamService.getAllTeams();
-        for (Team team : teams) {
-            teamComboBox.addItem(team);
-        }
-    }
-    
     private void populateData() {
-        if (existingPersonnel != null) {
-            fullNameField.setText(existingPersonnel.getFullName());
-            phoneNumberField.setText(existingPersonnel.getPhoneNumber());
-            ageField.setText(String.valueOf(existingPersonnel.getAge()));
-            addressField.setText(existingPersonnel.getAddress());
-            
-            // Select gender
-            if (existingPersonnel.getGender() != null) {
-                genderComboBox.setSelectedItem(existingPersonnel.getGender());
-            }
-            
-            // Select role
-            if (existingPersonnel.getRole() != null) {
-                roleComboBox.setSelectedItem(existingPersonnel.getRole());
-            }
-            
-            // Select team
-            if (existingPersonnel.getTeam() != null) {
-                for (int i = 0; i < teamComboBox.getItemCount(); i++) {
-                    Team team = teamComboBox.getItemAt(i);
-                    if (team != null && team.getTeamName().equals(existingPersonnel.getTeam())) {
-                        teamComboBox.setSelectedIndex(i);
-                        break;
-                    }
-                }
-            }
-            
-            // Select status (dropdown when editing)
-            if (existingPersonnel.getStatus() != null) {
-                statusComboBox.setSelectedItem(existingPersonnel.getStatus());
+        if (existingPersonnel == null) {
+            return;
+        }
+
+        fullNameField.setText(safe(existingPersonnel.getFullName()));
+        phoneNumberField.setText(safe(existingPersonnel.getPhoneNumber()));
+        addressField.setText(safe(existingPersonnel.getAddress()));
+
+        // Age (avoid showing 0 if not set)
+        ageField.setText(existingPersonnel.getAge() > 0 
+                ? String.valueOf(existingPersonnel.getAge()) 
+                : "");
+
+        // ComboBoxes
+        selectComboItem(genderComboBox, existingPersonnel.getGender());
+        selectComboItem(roleComboBox, existingPersonnel.getRole());
+    }
+
+    /* ---------- Helper Methods ---------- */
+
+    private String safe(String value) {
+        return value != null ? value : "";
+    }
+
+    private <T> void selectComboItem(JComboBox<T> comboBox, T value) {
+        if (value == null) return;
+
+        ComboBoxModel<T> model = comboBox.getModel();
+        for (int i = 0; i < model.getSize(); i++) {
+            T item = model.getElementAt(i);
+            if (item != null && item.equals(value)) {
+                comboBox.setSelectedItem(item);
+                return;
             }
         }
     }
