@@ -16,7 +16,7 @@ import main.model.Schedule;
 public class ScheduleDao {
 
     public List<Schedule> findAll() {
-        List<Schedule> results = new ArrayList<Schedule>();
+        List<Schedule> results = new ArrayList<>();
         String sql = "SELECT s.schedule_id, s.barangay_id, s.team_id, s.schedule_date, s.schedule_time, s.status,"
                 + " b.barangay_name, b.contact, ba.barangay_admin, t.team_name,"
                 + " tr.plate_number AS truck_plate_number, tr.truck_type, tr.assigned_team"
@@ -54,12 +54,12 @@ public class ScheduleDao {
             Integer teamId = findTeamId(conn, schedule.getCollectorTeam());
             Integer existingId = schedule.getId() > 0 ? schedule.getId() : findScheduleIdByBarangay(conn, barangayId);
 
-            if (existingId != null && existingId.intValue() > 0) {
+            if (existingId != null && existingId > 0) {
                 String sql = "UPDATE schedule SET team_id = ?, schedule_date = ?, schedule_time = ?, status = ?"
                         + " WHERE schedule_id = ?";
                 try (PreparedStatement stmt = conn.prepareStatement(sql)) {
                     bind(stmt, schedule, teamId, false);
-                    stmt.setInt(5, existingId.intValue());
+                    stmt.setInt(5, existingId);
                     return stmt.executeUpdate() > 0;
                 }
             }
@@ -67,7 +67,7 @@ public class ScheduleDao {
             String sql = "INSERT INTO schedule (barangay_id, team_id, schedule_date, schedule_time, status)"
                     + " VALUES (?, ?, ?, ?, ?)";
             try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setInt(1, barangayId.intValue());
+                stmt.setInt(1, barangayId);
                 bind(stmt, schedule, teamId, true);
                 return stmt.executeUpdate() > 0;
             }
@@ -154,7 +154,7 @@ public class ScheduleDao {
                 "SELECT barangay_id FROM barangay WHERE UPPER(TRIM(barangay_name)) = UPPER(TRIM(?))")) {
             stmt.setString(1, barangayName);
             try (ResultSet rs = stmt.executeQuery()) {
-                return rs.next() ? Integer.valueOf(rs.getInt("barangay_id")) : null;
+                return rs.next() ? rs.getInt("barangay_id") : null;
             }
         }
     }
@@ -168,7 +168,7 @@ public class ScheduleDao {
                 "SELECT team_id FROM team WHERE UPPER(TRIM(team_name)) = UPPER(TRIM(?))")) {
             stmt.setString(1, teamName);
             try (ResultSet rs = stmt.executeQuery()) {
-                return rs.next() ? Integer.valueOf(rs.getInt("team_id")) : null;
+                return rs.next() ? rs.getInt("team_id") : null;
             }
         }
     }
@@ -178,14 +178,14 @@ public class ScheduleDao {
                 "SELECT schedule_id FROM schedule WHERE barangay_id = ?")) {
             stmt.setInt(1, barangayId);
             try (ResultSet rs = stmt.executeQuery()) {
-                return rs.next() ? Integer.valueOf(rs.getInt("schedule_id")) : null;
+                return rs.next() ? rs.getInt("schedule_id") : null;
             }
         }
     }
 
     private void setNullableTeamId(PreparedStatement stmt, int index, Integer teamId) throws SQLException {
-        if (teamId != null && teamId.intValue() > 0) {
-            stmt.setInt(index, teamId.intValue());
+        if (teamId != null && teamId > 0) {
+            stmt.setInt(index, teamId);
         } else {
             stmt.setNull(index, Types.INTEGER);
         }

@@ -99,7 +99,7 @@ public class Header extends JPanel {
                 ? UserSession.getDisplayName() + " (" + UserSession.getRole() + ")"
                 : "No active session");
         sessionItem.setEnabled(false);
-        //menu.add(sessionItem);
+        menu.add(sessionItem);
 
         JMenuItem editName = new JMenuItem("Active");
         editName.addActionListener(event -> editDisplayName());
@@ -114,16 +114,16 @@ public class Header extends JPanel {
 
     private void editDisplayName() {
         String currentName = UserSession.isActive() ? UserSession.getDisplayName() : "";
-        String newName = JOptionPane.showInputDialog(this, "Enter display name:", currentName);
+        String newName = JOptionPane.showInputDialog(null, "Enter display name:", currentName);
         if (newName != null && !newName.trim().isEmpty()) {
             UserSession.setDisplayName(newName.trim());
-            JOptionPane.showMessageDialog(this, "Display name updated.");
+            JOptionPane.showMessageDialog(null, "Display name updated.");
         }
     }
 
     private void logout() {
         int confirm = JOptionPane.showConfirmDialog(
-                this,
+                null,
                 "Logout and return to welcome screen?",
                 "Logout",
                 JOptionPane.YES_NO_OPTION,

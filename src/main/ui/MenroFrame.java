@@ -1,5 +1,6 @@
 package main.ui;
 
+import main.app.AppRouter;
 import java.awt.*;
 
 import main.ui.admin_pages.HomePanel;

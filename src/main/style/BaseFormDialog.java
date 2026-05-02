@@ -348,33 +348,34 @@ root.add(mainPanel, BorderLayout.CENTER);
      * Add drag support
      */
     private void enableDragSupport(JPanel panel) {
-        final Point offset = new Point();
-        
         MouseAdapter adapter = new MouseAdapter() {
-            private Point start;
-            
+            private Point dragStartScreen;
+            private Point windowStart;
+
             @Override
             public void mousePressed(MouseEvent e) {
-                start = e.getPoint();
+                dragStartScreen = e.getLocationOnScreen();
+                windowStart = getLocation();
             }
-            
+
             @Override
             public void mouseDragged(MouseEvent e) {
-                if (start != null && getOwner() != null) {
-                    Point p = getOwner().getLocation();
-                    getOwner().setLocation(
-                            p.x + e.getPoint().x - start.x,
-                            p.y + e.getPoint().y - start.y
-                    );
+                if (dragStartScreen != null && windowStart != null) {
+                    Point current = e.getLocationOnScreen();
+                    int dx = current.x - dragStartScreen.x;
+                    int dy = current.y - dragStartScreen.y;
+                    setLocation(windowStart.x + dx, windowStart.y + dy);
+                    e.consume();
                 }
             }
-            
+
             @Override
             public void mouseReleased(MouseEvent e) {
-                start = null;
+                dragStartScreen = null;
+                windowStart = null;
             }
         };
-        
+
         panel.addMouseListener(adapter);
         panel.addMouseMotionListener(adapter);
     }

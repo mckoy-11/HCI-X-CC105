@@ -4,7 +4,6 @@ import main.dao.AccountDao;
 import main.database.SQLConnection;
 import main.model.Account;
 import main.service.AuthService;
-import main.ui.AppRouter;
 import main.ui.BarangayFrame;
 import main.ui.MenroFrame;
 import main.ui.dialogs.BarangaySetupDialog;

@@ -18,7 +18,7 @@ public final class DataChangeBus {
     }
 
     public static Subscription subscribe(String topic, Runnable listener) {
-        LISTENERS.computeIfAbsent(topic, key -> new CopyOnWriteArrayList<Runnable>()).add(listener);
+        LISTENERS.computeIfAbsent(topic, key -> new CopyOnWriteArrayList<>()).add(listener);
         return () -> unsubscribe(topic, listener);
     }
 

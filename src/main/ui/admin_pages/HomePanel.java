@@ -62,12 +62,7 @@ public final class HomePanel extends ReactivePanel {
                     new Color(232, 114, 82,  20),
                     new Color(139, 92,  246, 20), 
                 },
-                new String[]{
-                    cardData.getTodayBarangay(), 
-                    cardData.getCompletedBarangay(), 
-                    cardData.getMissedBarangay(), 
-                    "Unread"
-                }
+                new String[]{"Brgy", "Brgy", "Brgy", "Unread"}
             )
         );
         

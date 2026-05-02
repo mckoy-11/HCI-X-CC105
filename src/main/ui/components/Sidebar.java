@@ -11,7 +11,7 @@ import main.app.WelcomePage;
 import main.model.UserSession;
 import main.style.SystemStyle.RoundedPanel;
 
-import main.ui.AppRouter;
+import main.app.AppRouter;
 
 public class Sidebar extends JPanel implements ActionListener {
 

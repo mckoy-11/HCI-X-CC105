@@ -1,10 +1,12 @@
 package main.ui;
 
+import main.app.AppRouter;
 import java.awt.*;
 
 import main.ui.officials_pages.HomePanel;
 import main.ui.officials_pages.ReportsPanel;
 import main.ui.officials_pages.SettingsPanel;
+import main.ui.officials_pages.BarangayDetailsPanel;
 
 import main.ui.components.Sidebar;
 import javax.swing.*;
@@ -15,17 +17,19 @@ public final class BarangayFrame extends JFrame {
     private final JPanel contentPanel = new JPanel(cardLayout);
     
     private final String[] SIDEBARLABEL = { 
-        "Home", "Reports", "Settings" 
+        "Home", "Barangay", "Reports", "Settings" 
     };
 
     private final String[] SIDEBARICONS = {
         "house-white.png", 
+        "pin-house-white.png",
         "file-chart-column.png",
         "settings-white.png"
     };
     
     private final String[] SIDEBARICONHOVER = {
         "house.png",
+        "pin-house.png",
         "file-chart-column.png",
         "settings.png"
     };
@@ -43,6 +47,7 @@ public final class BarangayFrame extends JFrame {
 
         // Register screens
         router.register("Home",       new HomePanel());
+        router.register("Barangay",   new BarangayDetailsPanel());
         router.register("Reports",    new ReportsPanel());
         router.register("Settings",   new SettingsPanel());
 

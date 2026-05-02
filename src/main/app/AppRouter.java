@@ -1,4 +1,4 @@
-package main.ui;
+package main.app;
 
 import java.awt.CardLayout;
 import javax.swing.JPanel;
