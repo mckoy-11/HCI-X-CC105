@@ -13,7 +13,7 @@ import java.awt.*;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-public class MainFrame extends JFrame {
+public final class MainFrame extends JFrame {
 
     private static final String WELCOME = "welcome";
     private static final String LOGIN = "login";
@@ -23,7 +23,7 @@ public class MainFrame extends JFrame {
     private final JPanel root = new JPanel(layout);
     private final AppRouter router = new AppRouter(root, layout);
 
-private AuthService auth;
+    private final AuthService auth;
     private LoginPanel loginPanel;
 
     public MainFrame() {

@@ -9,7 +9,9 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import javax.swing.border.EmptyBorder;
 import static main.style.SystemStyle.*;
+import main.ui.components.Header;
 
 /**
  * BarangayDetailsPanel - Allows barangay users to view and edit their barangay details.
@@ -33,7 +35,6 @@ public class BarangayDetailsPanel extends JPanel {
     public BarangayDetailsPanel() {
         setLayout(new BorderLayout());
         setBackground(BACKGROUND);
-        setBorder(BorderFactory.createEmptyBorder(24, 24, 24, 24));
 
         // Initialize spinners
         SpinnerModel purokModel = new SpinnerNumberModel(1, 1, 99, 1);
@@ -45,12 +46,22 @@ public class BarangayDetailsPanel extends JPanel {
         styleSpinner(populationSpinner);
 
         loadBarangayData();
-
-        add(createHeader(), BorderLayout.NORTH);
-        add(createForm(), BorderLayout.CENTER);
-        add(createActions(), BorderLayout.SOUTH);
-
+        add(new Header("Barangay Details"), BorderLayout.NORTH);
+        add(createMainContent(), BorderLayout.CENTER);
+        
         setupListeners();
+    }
+    
+    private JPanel createMainContent() {
+       JPanel root = GradientPaint(BGCOLOR1, BGCOLOR2, 0, false, 20);
+        root.setLayout(new BorderLayout(0, 10));
+        root.setBorder(new EmptyBorder(20, 20, 20, 20));
+        
+        root.add(createHeader(), BorderLayout.NORTH);
+        root.add(createForm(), BorderLayout.CENTER);
+        root.add(createActions(), BorderLayout.SOUTH);
+
+        return root;
     }
 
     private void loadBarangayData() {

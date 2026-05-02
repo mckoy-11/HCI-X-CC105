@@ -5,7 +5,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import main.database.DbSchemaHelper;
@@ -36,7 +35,7 @@ public class AnnouncementDao {
     public List<Announcement> findArchived() throws SQLException {
         archiveExpired();
         ensureSchema();
-        List<Announcement> results = new ArrayList<Announcement>();
+        List<Announcement> results = new ArrayList<>();
         try (Connection conn = SQLConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(
                      "SELECT * FROM " + TABLE_NAME + " WHERE is_archived = 1 ORDER BY archived_at DESC, created_at DESC");
