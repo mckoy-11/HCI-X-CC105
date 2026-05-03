@@ -1,6 +1,7 @@
 package main.app;
 
 import main.dao.AccountDao;
+import main.database.DbSchemaHelper;
 import main.database.SQLConnection;
 import main.model.Account;
 import main.service.AuthService;
@@ -44,6 +45,10 @@ public final class MainFrame extends JFrame {
     private AuthService initAuth() {
         try {
             Connection conn = SQLConnection.getConnection();
+            
+            // Migrate database schema if needed
+            DbSchemaHelper.migrateToNormalizedSchema(conn);
+            
             return new AuthService(new AccountDao(conn));
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(

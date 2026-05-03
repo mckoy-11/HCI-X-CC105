@@ -35,8 +35,8 @@ public final class ScheduleFormDialog extends BaseFormDialog {
     private final JTextField contactNumberField = styleInput(new JTextField());
     private final JComboBox<Team> teamComboBox;
     private final JComboBox<Truck> truckComboBox;
-    private final JTextField dateField = styleInput(new JTextField());
-    private final JTextField timeField = styleInput(new JTextField());
+    private final JTextField dateField = new JTextField();
+    private final JTextField timeField = new JTextField();
     private final JComboBox<String> statusComboBox;
     
     private final Schedule existingSchedule;
@@ -51,11 +51,21 @@ public final class ScheduleFormDialog extends BaseFormDialog {
         this.barangayComboBox = styleComboBox(new JComboBox<>());
         this.teamComboBox = styleComboBox(new JComboBox<>());
         this.truckComboBox = styleComboBox(new JComboBox<>());
-        this.statusComboBox = styleComboBox(new JComboBox<>(new String[]{"Pending", "Confirmed", "Completed", "Cancelled"}));
+        this.statusComboBox = styleComboBox(new JComboBox<>(new String[]{"Select status", "SCHEDULED", "PENDING", "COMPLETED", "CANCELLED"}));
         
-        // Default status when adding
+        // Style date and time fields - make them read-only
+        dateField.setEditable(false);
+        timeField.setEditable(false);
+        dateField.setBackground(new Color(240, 240, 240));
+        timeField.setBackground(new Color(240, 240, 240));
+        
+        // Auto-set current date and time if creating new schedule
         if (!isEditMode) {
-            statusComboBox.setSelectedItem("Pending");
+            LocalDate today = LocalDate.now();
+            LocalTime now = LocalTime.now();
+            dateField.setText(today.toString());
+            timeField.setText(String.format("%02d:%02d", now.getHour(), now.getMinute()));
+            statusComboBox.setSelectedItem("SCHEDULED");
         }
         
         // Load data
@@ -106,33 +116,37 @@ public final class ScheduleFormDialog extends BaseFormDialog {
             return;
         }
         
-        if (dateField.getText().trim().isEmpty()) {
-            showError("Date is required");
-            return;
-        }
-        
-        if (timeField.getText().trim().isEmpty()) {
-            showError("Time is required");
-            return;
-        }
-        
         try {
             Schedule schedule = existingSchedule != null ? existingSchedule : new Schedule();
             
-// Get selected barangay
+            // Get selected barangay
             Barangay selectedBarangay = (Barangay) barangayComboBox.getSelectedItem();
             schedule.setBarangayName(selectedBarangay.getBarangayName());
             
-            // Auto-set from barangay if empty
+            // Auto-fill admin name from barangay (read from barangay_admin table)
             String admin = barangayAdminField.getText().trim();
-            schedule.setBarangayAdmin(admin.isEmpty() ? selectedBarangay.getContact() : admin);
+            schedule.setBarangayAdmin(admin.isEmpty() ? "Admin" : admin);
             
+            // Auto-fill contact from barangay
             String contact = contactNumberField.getText().trim();
             schedule.setContactNumber(contact.isEmpty() ? selectedBarangay.getContact() : contact);
             
+            // Use today's date (read-only)
             schedule.setDate(LocalDate.parse(dateField.getText().trim()));
             schedule.setTime(LocalTime.parse(timeField.getText().trim()));
-            schedule.setStatus((String) statusComboBox.getSelectedItem());
+            
+            // Status logic
+            String selectedStatus = (String) statusComboBox.getSelectedItem();
+            LocalDate today = LocalDate.now();
+            LocalDate scheduleDate = schedule.getDate();
+            
+            // If date is today, auto-change to PENDING
+            if (scheduleDate.equals(today)) {
+                schedule.setStatus("PENDING");
+            } else {
+                // Otherwise use selected status
+                schedule.setStatus(selectedStatus != null ? selectedStatus : "SCHEDULED");
+            }
             
             if (teamComboBox.getSelectedItem() != null) {
                 schedule.setCollectorTeam(((Team) teamComboBox.getSelectedItem()).getTeamName());
@@ -176,7 +190,7 @@ public final class ScheduleFormDialog extends BaseFormDialog {
                 showError("Failed to save schedule");
             }
         } catch (Exception e) {
-            showError("Invalid date/time format. Use YYYY-MM-DD and HH:MM");
+            showError("Error: " + e.getMessage());
         }
     }
     

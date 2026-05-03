@@ -15,6 +15,35 @@ public class AuthService {
 
     public AuthService(AccountDao dao) {
         this.dao = dao;
+        initializeAdminAccount();
+    }
+
+    /**
+     * Initialize the built-in MENRO Admin account if it doesn't exist
+     */
+    private void initializeAdminAccount() {
+        try {
+            // Check if admin account already exists
+            Account existingAdmin = dao.findByEmail("admin@municipal.gov");
+            if (existingAdmin != null) {
+                return; // Admin account already exists
+            }
+
+            // Create the admin account
+            Account adminAccount = new Account("Menro Admin", "admin@municipal.gov", "admin123");
+            adminAccount.setRole("MENRO"); // This will be converted to role_id 1
+            adminAccount.setStatus("ACTIVE"); // This will be converted to status_id 1
+            adminAccount.setBarangaySetupComplete(true); // Admin doesn't need barangay setup
+
+            boolean success = dao.save(adminAccount);
+            if (success) {
+                System.out.println("Built-in MENRO Admin account created successfully");
+            } else {
+                System.err.println("Failed to create built-in MENRO Admin account");
+            }
+        } catch (SQLException e) {
+            System.err.println("Error initializing admin account: " + e.getMessage());
+        }
     }
 
     /**
@@ -150,6 +179,33 @@ public class AuthService {
             return dao.findByEmail(email);
         } catch (SQLException e) {
             return null;
+        }
+    }
+
+    /**
+     * Change account email address
+     * @param accountId
+     * @param newEmail
+     * @return success message or error
+     */
+    public String changeEmail(int accountId, String newEmail) {
+        try {
+            Account acc = dao.findById(accountId);
+            if (acc == null) return "Account not found";
+
+            // Check if new email is already taken
+            if (dao.emailExists(newEmail) && !acc.getEmail().equals(newEmail)) {
+                return "Email address is already in use";
+            }
+
+            acc.setEmail(newEmail);
+            dao.update(acc);
+            DataChangeBus.publish(DataTopics.ACCOUNTS);
+
+            return "SUCCESS";
+
+        } catch (SQLException e) {
+            return "Error: " + e.getMessage();
         }
     }
 }

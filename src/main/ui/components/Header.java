@@ -11,12 +11,16 @@ import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPasswordField;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import main.app.MainFrame;
+import main.dao.AccountDao;
+import main.database.SQLConnection;
 import main.model.UserSession;
+import main.service.AuthService;
 import main.service.HeaderService;
 import static main.style.SystemStyle.PlainBtn;
 import static main.style.SystemStyle.TEXTCOLOR;
@@ -101,15 +105,104 @@ public class Header extends JPanel {
         sessionItem.setEnabled(false);
         menu.add(sessionItem);
 
-        JMenuItem editName = new JMenuItem("Active");
-        editName.addActionListener(event -> editDisplayName());
-        //menu.add(editName);
+        JMenuItem changePasswordItem = new JMenuItem("Change Password");
+        changePasswordItem.addActionListener(event -> changePassword());
+        menu.add(changePasswordItem);
+
+        JMenuItem changeEmailItem = new JMenuItem("Change Email");
+        changeEmailItem.addActionListener(event -> changeEmail());
+        menu.add(changeEmailItem);
 
         JMenuItem logout = new JMenuItem("Logout");
         logout.addActionListener(event -> logout());
         menu.add(logout);
 
         menu.show(anchor, 0, anchor.getHeight());
+    }
+
+    private void changePassword() {
+        if (!UserSession.isActive()) {
+            JOptionPane.showMessageDialog(null, "No active session.");
+            return;
+        }
+
+        JPasswordField currentField = new JPasswordField();
+        JPasswordField newField = new JPasswordField();
+        JPasswordField confirmField = new JPasswordField();
+
+        Object[] message = {
+                "Current password:", currentField,
+                "New password:", newField,
+                "Confirm new password:", confirmField
+        };
+
+        int option = JOptionPane.showConfirmDialog(
+                null,
+                message,
+                "Change Password",
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE
+        );
+
+        if (option != JOptionPane.OK_OPTION) {
+            return;
+        }
+
+        String current = new String(currentField.getPassword());
+        String newPass = new String(newField.getPassword());
+        String confirm = new String(confirmField.getPassword());
+
+        if (current.isEmpty() || newPass.isEmpty() || confirm.isEmpty()) {
+            JOptionPane.showMessageDialog(null, "All password fields are required.");
+            return;
+        }
+
+        if (!newPass.equals(confirm)) {
+            JOptionPane.showMessageDialog(null, "New passwords do not match.");
+            return;
+        }
+
+        try (java.sql.Connection conn = SQLConnection.getConnection()) {
+            AuthService auth = new AuthService(new AccountDao(conn));
+            String result = auth.changePassword(UserSession.getAccountId(), current, newPass);
+            if ("SUCCESS".equals(result)) {
+                JOptionPane.showMessageDialog(null, "Password updated successfully.");
+            } else {
+                JOptionPane.showMessageDialog(null, result);
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Unable to change password: " + e.getMessage());
+        }
+    }
+
+    private void changeEmail() {
+        if (!UserSession.isActive()) {
+            JOptionPane.showMessageDialog(null, "No active session.");
+            return;
+        }
+
+        String newEmail = JOptionPane.showInputDialog(null, "Enter new email address:", UserSession.getEmail());
+        if (newEmail == null || newEmail.trim().isEmpty()) {
+            return;
+        }
+
+        try (java.sql.Connection conn = SQLConnection.getConnection()) {
+            AuthService auth = new AuthService(new AccountDao(conn));
+            String result = auth.changeEmail(UserSession.getAccountId(), newEmail.trim());
+            if ("SUCCESS".equals(result)) {
+                UserSession.startSession(
+                        UserSession.getAccountId(),
+                        newEmail.trim(),
+                        UserSession.getRole(),
+                        UserSession.getDisplayName()
+                );
+                JOptionPane.showMessageDialog(null, "Email updated successfully.");
+            } else {
+                JOptionPane.showMessageDialog(null, result);
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Unable to change email: " + e.getMessage());
+        }
     }
 
     private void editDisplayName() {

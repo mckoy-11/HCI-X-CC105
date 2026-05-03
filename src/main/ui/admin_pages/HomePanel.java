@@ -159,9 +159,15 @@ public final class HomePanel extends ReactivePanel {
             card.setBackground(Color.WHITE);
         }
 
-        if (barangays != null && !barangays.isEmpty()) {
+        // Only show barangays if it's TODAY
+        if (isToday && barangays != null && !barangays.isEmpty()) {
             barangays.forEach((b) -> {
-                panel.add(isToday ? createWhiteLabel(b) : createGreenLabel(b));
+                panel.add(createWhiteLabel(b));
+            });
+        } else if (!isToday && barangays != null && !barangays.isEmpty()) {
+            // For other days, show in green
+            barangays.forEach((b) -> {
+                panel.add(createGreenLabel(b));
             });
         } else {
             panel.add(createCenteredLabel("No schedule"));
@@ -199,15 +205,26 @@ public final class HomePanel extends ReactivePanel {
 
         java.util.List<Schedule> schedules = scheduleService.getAllSchedules();
         
-        schedules.forEach((s) -> {
-            table.addRow(
+        // FILTER: Show ONLY today's schedules
+        LocalDate today = LocalDate.now();
+        schedules.stream()
+            .filter(s -> s.getDate() != null && s.getDate().equals(today))
+            .forEach(s -> {
+                // Determine status based on report submission
+                // PENDING if no report submitted, COMPLETED if report submitted
+                String displayStatus = s.getStatus();
+                if (displayStatus == null || displayStatus.isEmpty()) {
+                    displayStatus = "PENDING";
+                }
+                
+                table.addRow(
                     s.getBarangayName(),
                     s.getCollectorTeam(),
                     s.getDate(),
                     s.getTime(),
-                    s.getStatus()
-            );
-        });
+                    displayStatus
+                );
+            });
 
         return table;
     }

@@ -202,8 +202,6 @@ CREATE TABLE personnel (
     role_id INT NOT NULL,
     status_id INT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (team_id) REFERENCES team(team_id)
-        ON DELETE SET NULL ON UPDATE CASCADE,
     FOREIGN KEY (role_id) REFERENCES role_lookup(role_id)
         ON DELETE RESTRICT ON UPDATE CASCADE,
     FOREIGN KEY (status_id) REFERENCES status_lookup(status_id)
@@ -233,10 +231,6 @@ CREATE TABLE team (
     truck_id INT NULL,
     status_id INT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (leader_id) REFERENCES personnel(personnel_id)
-        ON DELETE SET NULL ON UPDATE CASCADE,
-    FOREIGN KEY (driver_id) REFERENCES personnel(personnel_id)
-        ON DELETE SET NULL ON UPDATE CASCADE,
     FOREIGN KEY (truck_id) REFERENCES truck(truck_id)
         ON DELETE SET NULL ON UPDATE CASCADE,
     FOREIGN KEY (status_id) REFERENCES status_lookup(status_id)
@@ -301,6 +295,16 @@ CREATE INDEX idx_personnel_role ON personnel(role_id);
 CREATE INDEX idx_team_status ON team(status_id);
 CREATE INDEX idx_schedule_date ON schedule(schedule_date);
 CREATE INDEX idx_purok_barangay ON purok_checklist(barangay_id);
+
+-- Add circular foreign key constraints
+ALTER TABLE personnel ADD CONSTRAINT fk_personnel_team 
+    FOREIGN KEY (team_id) REFERENCES team(team_id) ON DELETE SET NULL ON UPDATE CASCADE;
+
+ALTER TABLE team ADD CONSTRAINT fk_team_leader 
+    FOREIGN KEY (leader_id) REFERENCES personnel(personnel_id) ON DELETE SET NULL ON UPDATE CASCADE;
+
+ALTER TABLE team ADD CONSTRAINT fk_team_driver 
+    FOREIGN KEY (driver_id) REFERENCES personnel(personnel_id) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- =====================
 -- DML SECTION
@@ -370,6 +374,10 @@ INSERT INTO status_lookup (status_id, status_domain_id, status_key, status_label
 (33, 10, 'ON_DUTY', 'On Duty'),
 (34, 10, 'OFF_DUTY', 'Off Duty');
 
+-- Built-in admin account
+INSERT INTO account (account_id, name, email_address, password, status_id, role_id, is_barangay_setup_complete)
+VALUES (1, 'Menro Admin', 'admin@municipal.gov', 'admin123', 1, 1, 1);
+
 -- Complaint types
 INSERT INTO complaint_type (complaint_type_id, type_key, type_label) VALUES
 (1, 'WASTE_COLLECTION', 'Waste Collection'),
@@ -412,9 +420,9 @@ INSERT INTO entry_type_lookup (entry_type_id, entry_type_key, entry_type_label) 
 -- SAMPLE DATA SECTION
 -- =====================
 
--- ACCOUNT (20)
-INSERT INTO account (name, email_address, password, status_id, role_id, is_barangay_setup_complete) VALUES
-('Municipal Admin', 'admin@municipal.gov', 'admin123', 1, 1, 1),
+-- Built-in admin account (AUTO ID)
+INSERT INTO account (name, email_address, password, status_id, role_id, is_barangay_setup_complete) VALUES 
+('Micko Jay Gonzales', 'mickojay@gmail.com', '123456', 1, 1, 1),
 ('Barangay Official', 'barangay@gmail.com', 'barangay123', 1, 2, 0),
 ('Juan Dela Cruz', 'juan1@mail.com', 'pass123', 1, 2, 1),
 ('Maria Santos', 'maria2@mail.com', 'pass123', 1, 2, 1),
@@ -575,26 +583,26 @@ INSERT INTO request (barangay_id, request_type_id, message, status_id, is_read, 
 
 -- PERSONNEL (20)
 INSERT INTO personnel (personnel_name, age, gender_id, address, contact_number, team_id, role_id, status_id) VALUES
-('Collector One', 28, 1, 'Zone 1', '0917110001', 1, 4, 31),
-('Collector Two', 30, 2, 'Zone 2', '0917110002', 2, 4, 31),
-('Collector Three', 29, 1, 'Zone 3', '0917110003', 3, 4, 31),
-('Collector Four', 32, 2, 'Zone 4', '0917110004', 4, 4, 31),
-('Collector Five', 27, 1, 'Zone 5', '0917110005', 5, 4, 31),
-('Collector Six', 33, 2, 'Zone 6', '0917110006', 6, 4, 31),
-('Collector Seven', 31, 1, 'Zone 7', '0917110007', 7, 4, 31),
-('Collector Eight', 26, 2, 'Zone 8', '0917110008', 8, 4, 31),
-('Collector Nine', 34, 1, 'Zone 9', '0917110009', 9, 4, 31),
-('Collector Ten', 28, 2, 'Zone 10', '0917110010', 10, 4, 31),
-('Driver One', 35, 1, 'Depot A', '0917120001', 1, 5, 31),
-('Driver Two', 36, 2, 'Depot B', '0917120002', 2, 5, 31),
-('Driver Three', 38, 1, 'Depot C', '0917120003', 3, 5, 31),
-('Driver Four', 37, 2, 'Depot D', '0917120004', 4, 5, 31),
-('Driver Five', 40, 1, 'Depot E', '0917120005', 5, 5, 31),
-('Driver Six', 39, 2, 'Depot F', '0917120006', 6, 5, 31),
-('Driver Seven', 41, 1, 'Depot G', '0917120007', 7, 5, 31),
-('Driver Eight', 34, 2, 'Depot H', '0917120008', 8, 5, 31),
-('Driver Nine', 42, 1, 'Depot I', '0917120009', 9, 5, 31),
-('Driver Ten', 43, 2, 'Depot J', '0917120010', 10, 5, 31);
+('Collector One', 28, 1, 'Zone 1', '0917110001', NULL, 4, 31),
+('Collector Two', 30, 2, 'Zone 2', '0917110002', NULL, 4, 31),
+('Collector Three', 29, 1, 'Zone 3', '0917110003', NULL, 4, 31),
+('Collector Four', 32, 2, 'Zone 4', '0917110004', NULL, 4, 31),
+('Collector Five', 27, 1, 'Zone 5', '0917110005', NULL, 4, 31),
+('Collector Six', 33, 2, 'Zone 6', '0917110006', NULL, 4, 31),
+('Collector Seven', 31, 1, 'Zone 7', '0917110007', NULL, 4, 31),
+('Collector Eight', 26, 2, 'Zone 8', '0917110008', NULL, 4, 31),
+('Collector Nine', 34, 1, 'Zone 9', '0917110009', NULL, 4, 31),
+('Collector Ten', 28, 2, 'Zone 10', '0917110010', NULL, 4, 31),
+('Driver One', 35, 1, 'Depot A', '0917120001', NULL, 5, 31),
+('Driver Two', 36, 2, 'Depot B', '0917120002', NULL, 5, 31),
+('Driver Three', 38, 1, 'Depot C', '0917120003', NULL, 5, 31),
+('Driver Four', 37, 2, 'Depot D', '0917120004', NULL, 5, 31),
+('Driver Five', 40, 1, 'Depot E', '0917120005', NULL, 5, 31),
+('Driver Six', 39, 2, 'Depot F', '0917120006', NULL, 5, 31),
+('Driver Seven', 41, 1, 'Depot G', '0917120007', NULL, 5, 31),
+('Driver Eight', 34, 2, 'Depot H', '0917120008', NULL, 5, 31),
+('Driver Nine', 42, 1, 'Depot I', '0917120009', NULL, 5, 31),
+('Driver Ten', 43, 2, 'Depot J', '0917120010', NULL, 5, 31);
 
 -- TRUCK (20)
 INSERT INTO truck (plate_number, truck_type_id, capacity, status_id) VALUES
@@ -621,26 +629,26 @@ INSERT INTO truck (plate_number, truck_type_id, capacity, status_id) VALUES
 
 -- TEAM (20)
 INSERT INTO team (team_name, leader_id, driver_id, truck_id, status_id) VALUES
-('Team Alpha', 1, 11, 1, 21),
-('Team Bravo', 2, 12, 2, 21),
-('Team Charlie', 3, 13, 3, 21),
-('Team Delta', 4, 14, 4, 21),
-('Team Echo', 5, 15, 5, 21),
-('Team Foxtrot', 6, 16, 6, 21),
-('Team Gamma', 7, 17, 7, 21),
-('Team Hotel', 8, 18, 8, 21),
-('Team India', 9, 19, 9, 21),
-('Team Juliet', 10, 20, 10, 21),
-('Team Kilo', 1, 11, 11, 21),
-('Team Lima', 2, 12, 12, 21),
-('Team Mike', 3, 13, 13, 21),
-('Team November', 4, 14, 14, 21),
-('Team Oscar', 5, 15, 15, 21),
-('Team Papa', 6, 16, 16, 21),
-('Team Quebec', 7, 17, 17, 21),
-('Team Romeo', 8, 18, 18, 21),
-('Team Sierra', 9, 19, 19, 21),
-('Team Tango', 10, 20, 20, 21);
+('Team Alpha', NULL, NULL, 1, 21),
+('Team Bravo', NULL, NULL, 2, 21),
+('Team Charlie', NULL, NULL, 3, 21),
+('Team Delta', NULL, NULL, 4, 21),
+('Team Echo', NULL, NULL, 5, 21),
+('Team Foxtrot', NULL, NULL, 6, 21),
+('Team Gamma', NULL, NULL, 7, 21),
+('Team Hotel', NULL, NULL, 8, 21),
+('Team India', NULL, NULL, 9, 21),
+('Team Juliet', NULL, NULL, 10, 21),
+('Team Kilo', NULL, NULL, 11, 21),
+('Team Lima', NULL, NULL, 12, 21),
+('Team Mike', NULL, NULL, 13, 21),
+('Team November', NULL, NULL, 14, 21),
+('Team Oscar', NULL, NULL, 15, 21),
+('Team Papa', NULL, NULL, 16, 21),
+('Team Quebec', NULL, NULL, 17, 21),
+('Team Romeo', NULL, NULL, 18, 21),
+('Team Sierra', NULL, NULL, 19, 21),
+('Team Tango', NULL, NULL, 20, 21);
 
 -- SCHEDULE (20)
 INSERT INTO schedule (barangay_id, team_id, schedule_date, schedule_time, status_id) VALUES
@@ -687,3 +695,81 @@ INSERT INTO purok_checklist (barangay_id, purok_name, is_collected) VALUES
 (18, 'Purok 9-B', 1),
 (19, 'Purok 10-A', 0),
 (20, 'Purok 10-B', 1);
+
+-- Update team assignments for personnel
+UPDATE personnel SET team_id = 1 WHERE personnel_id IN (1, 11);
+UPDATE personnel SET team_id = 2 WHERE personnel_id IN (2, 12);
+UPDATE personnel SET team_id = 3 WHERE personnel_id IN (3, 13);
+UPDATE personnel SET team_id = 4 WHERE personnel_id IN (4, 14);
+UPDATE personnel SET team_id = 5 WHERE personnel_id IN (5, 15);
+UPDATE personnel SET team_id = 6 WHERE personnel_id IN (6, 16);
+UPDATE personnel SET team_id = 7 WHERE personnel_id IN (7, 17);
+UPDATE personnel SET team_id = 8 WHERE personnel_id IN (8, 18);
+UPDATE personnel SET team_id = 9 WHERE personnel_id IN (9, 19);
+UPDATE personnel SET team_id = 10 WHERE personnel_id IN (10, 20);
+
+-- Update team leaders and drivers
+UPDATE team SET leader_id = 1, driver_id = 11 WHERE team_id = 1;
+UPDATE team SET leader_id = 2, driver_id = 12 WHERE team_id = 2;
+UPDATE team SET leader_id = 3, driver_id = 13 WHERE team_id = 3;
+UPDATE team SET leader_id = 4, driver_id = 14 WHERE team_id = 4;
+UPDATE team SET leader_id = 5, driver_id = 15 WHERE team_id = 5;
+UPDATE team SET leader_id = 6, driver_id = 16 WHERE team_id = 6;
+UPDATE team SET leader_id = 7, driver_id = 17 WHERE team_id = 7;
+UPDATE team SET leader_id = 8, driver_id = 18 WHERE team_id = 8;
+UPDATE team SET leader_id = 9, driver_id = 19 WHERE team_id = 9;
+UPDATE team SET leader_id = 10, driver_id = 20 WHERE team_id = 10;
+UPDATE team SET leader_id = 1, driver_id = 11 WHERE team_id = 11;
+UPDATE team SET leader_id = 2, driver_id = 12 WHERE team_id = 12;
+UPDATE team SET leader_id = 3, driver_id = 13 WHERE team_id = 13;
+UPDATE team SET leader_id = 4, driver_id = 14 WHERE team_id = 14;
+UPDATE team SET leader_id = 5, driver_id = 15 WHERE team_id = 15;
+UPDATE team SET leader_id = 6, driver_id = 16 WHERE team_id = 16;
+UPDATE team SET leader_id = 7, driver_id = 17 WHERE team_id = 17;
+UPDATE team SET leader_id = 8, driver_id = 18 WHERE team_id = 18;
+UPDATE team SET leader_id = 9, driver_id = 19 WHERE team_id = 19;
+UPDATE team SET leader_id = 10, driver_id = 20 WHERE team_id = 20;
+INSERT INTO team_collectors (team_id, personnel_id) VALUES
+(1, 1), (1, 2),
+(2, 3), (2, 4),
+(3, 5), (3, 6),
+(4, 7), (4, 8),
+(5, 9), (5, 10),
+(6, 1), (6, 3),
+(7, 2), (7, 4),
+(8, 5), (8, 6),
+(9, 7), (9, 8),
+(10, 9), (10, 10),
+(11, 1), (11, 2),
+(12, 3), (12, 4),
+(13, 5), (13, 6),
+(14, 7), (14, 8),
+(15, 9), (15, 10),
+(16, 1), (16, 3),
+(17, 2), (17, 4),
+(18, 5), (18, 6),
+(19, 7), (19, 8),
+(20, 9), (20, 10);
+
+-- ENTRY_ATTACHMENT (20 sample attachments for complaints, reports, and requests)
+INSERT INTO entry_attachment (entry_type_id, entry_id, image_blob) VALUES
+(1, 1, NULL), -- Complaint 1 attachment
+(1, 2, NULL), -- Complaint 2 attachment
+(1, 3, NULL), -- Complaint 3 attachment
+(1, 4, NULL), -- Complaint 4 attachment
+(1, 5, NULL), -- Complaint 5 attachment
+(2, 1, NULL), -- Report 1 attachment
+(2, 2, NULL), -- Report 2 attachment
+(2, 3, NULL), -- Report 3 attachment
+(2, 4, NULL), -- Report 4 attachment
+(2, 5, NULL), -- Report 5 attachment
+(3, 1, NULL), -- Request 1 attachment
+(3, 2, NULL), -- Request 2 attachment
+(3, 3, NULL), -- Request 3 attachment
+(3, 4, NULL), -- Request 4 attachment
+(3, 5, NULL), -- Request 5 attachment
+(1, 6, NULL), -- Complaint 6 attachment
+(1, 7, NULL), -- Complaint 7 attachment
+(2, 6, NULL), -- Report 6 attachment
+(2, 7, NULL), -- Report 7 attachment
+(3, 6, NULL); -- Request 6 attachment

@@ -1,12 +1,9 @@
 package main.ui.dialogs;
 
 import java.awt.*;
-import java.util.List;
 import javax.swing.*;
 import main.model.Personnel;
-import main.model.Team;
 import main.service.PersonnelService;
-import main.service.TeamService;
 import static main.style.SystemStyle.*;
 import main.style.BaseFormDialog;
 import main.store.DataChangeBus;
@@ -19,14 +16,12 @@ import static main.store.DataTopics.PERSONNEL;
 public final class PersonnelFormDialog extends BaseFormDialog {
 
     private final PersonnelService personnelService = new PersonnelService();
-    private final TeamService teamService = new TeamService();
     
     private final JTextField fullNameField = styleInput(new JTextField());
     private final JTextField phoneNumberField = styleInput(new JTextField());
     private final JTextField ageField = styleInput(new JTextField());
     private final JTextField addressField = styleInput(new JTextField());
     private final JComboBox<String> genderComboBox;
-    private final JComboBox<String> roleComboBox;
     
     private final Personnel existingPersonnel;
     private final boolean isEditMode;
@@ -38,7 +33,6 @@ this.isEditMode = personnel != null;
         
         // Initialize combo boxes
         this.genderComboBox = styleComboBox(new JComboBox<>(new String[]{"Male", "Female", "Other"}));
-        this.roleComboBox = styleComboBox(new JComboBox<>(new String[]{"Driver", "Helper", "Collector", "Supervisor", "Admin"}));
         
         // Populate data
         populateData();
@@ -63,8 +57,8 @@ this.isEditMode = personnel != null;
         addFormRow(gbc, "Phone Number", phoneNumberField, "Age", ageField);
         gbc.gridy++;
         
-        // Gender and Role
-        addFormRow(gbc, "Gender", genderComboBox, "Role", roleComboBox);
+        // Gender
+        addFormField(gbc, "Gender", genderComboBox);
         gbc.gridy++;
         
         // Address (full-width)
@@ -87,8 +81,14 @@ this.isEditMode = personnel != null;
             personnel.setPhoneNumber(phoneNumberField.getText().trim());
             personnel.setAddress(addressField.getText().trim());
             personnel.setGender((String) genderComboBox.getSelectedItem());
-            personnel.setRole((String) roleComboBox.getSelectedItem());
-            personnel.setStatus("Unassigned");
+            
+            if (isEditMode) {
+                personnel.setRole(existingPersonnel.getRole());
+                personnel.setStatus(existingPersonnel.getStatus());
+            } else {
+                personnel.setRole("Personnel");
+                personnel.setStatus("Unassigned");
+            }
             
             // Parse age
             String ageText = ageField.getText().trim();
@@ -133,7 +133,6 @@ this.isEditMode = personnel != null;
 
         // ComboBoxes
         selectComboItem(genderComboBox, existingPersonnel.getGender());
-        selectComboItem(roleComboBox, existingPersonnel.getRole());
     }
 
     /* ---------- Helper Methods ---------- */

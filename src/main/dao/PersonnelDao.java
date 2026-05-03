@@ -15,7 +15,12 @@ public class PersonnelDao {
 
     public List<Personnel> getAllPersonnel() {
         List<Personnel> personnelList = new ArrayList<>();
-        String sql = "SELECT * FROM personnel ORDER BY personnel_name ASC";
+        String sql = "SELECT p.*, gl.gender_label AS gender, rl.role_label AS role, sl.status_label AS status " +
+                     "FROM personnel p " +
+                     "LEFT JOIN gender_lookup gl ON p.gender_id = gl.gender_id " +
+                     "LEFT JOIN role_lookup rl ON p.role_id = rl.role_id " +
+                     "LEFT JOIN status_lookup sl ON p.status_id = sl.status_id " +
+                     "ORDER BY p.personnel_name ASC";
 
         try (Connection conn = SQLConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
@@ -33,7 +38,14 @@ public class PersonnelDao {
 
     public List<Personnel> getAllUnassignedPersonnel() {
         List<Personnel> personnelList = new ArrayList<>();
-        String sql = "SELECT * FROM personnel WHERE status = 'Unassigned' ORDER BY personnel_name ASC";
+
+        String sql = "SELECT p.*, gl.gender_label AS gender, rl.role_label AS role, sl.status_label AS status " +
+                     "FROM personnel p " +
+                     "LEFT JOIN gender_lookup gl ON p.gender_id = gl.gender_id " +
+                     "LEFT JOIN role_lookup rl ON p.role_id = rl.role_id " +
+                     "LEFT JOIN status_lookup sl ON p.status_id = sl.status_id " +
+                     "WHERE (p.team_name IS NULL OR TRIM(p.team_name) = '') " +
+                     "ORDER BY p.personnel_name ASC";
 
         try (Connection conn = SQLConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
@@ -42,6 +54,7 @@ public class PersonnelDao {
             while (rs.next()) {
                 personnelList.add(mapResultSetToPersonnel(rs));
             }
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -50,7 +63,12 @@ public class PersonnelDao {
     }
 
     public Personnel getPersonnelById(int id) {
-        String sql = "SELECT * FROM personnel WHERE personnel_id = ?";
+        String sql = "SELECT p.*, gl.gender_label AS gender, rl.role_label AS role, sl.status_label AS status " +
+                     "FROM personnel p " +
+                     "LEFT JOIN gender_lookup gl ON p.gender_id = gl.gender_id " +
+                     "LEFT JOIN role_lookup rl ON p.role_id = rl.role_id " +
+                     "LEFT JOIN status_lookup sl ON p.status_id = sl.status_id " +
+                     "WHERE p.personnel_id = ?";
 
         try (Connection conn = SQLConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -71,12 +89,19 @@ public class PersonnelDao {
 
     public List<Personnel> getPersonnelByRole(String role) {
         List<Personnel> personnelList = new ArrayList<>();
-        String sql = "SELECT * FROM personnel WHERE role = ? ORDER BY personnel_name ASC";
+        String sql = "SELECT p.*, gl.gender_label AS gender, rl.role_label AS role, sl.status_label AS status " +
+                     "FROM personnel p " +
+                     "LEFT JOIN gender_lookup gl ON p.gender_id = gl.gender_id " +
+                     "LEFT JOIN role_lookup rl ON p.role_id = rl.role_id " +
+                     "LEFT JOIN status_lookup sl ON p.status_id = sl.status_id " +
+                     "WHERE rl.role_label = ? OR rl.role_key = UPPER(?) " +
+                     "ORDER BY p.personnel_name ASC";
 
         try (Connection conn = SQLConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, role);
+            stmt.setString(2, role);
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
@@ -91,19 +116,19 @@ public class PersonnelDao {
     }
 
     public boolean addPersonnel(Personnel personnel) {
-        String sql = "INSERT INTO personnel (personnel_name, age, gender, address, contact_number, team_name, role, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO personnel (personnel_name, age, gender_id, address, contact_number, team_id, role_id, status_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = SQLConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, personnel.getFullName());
             stmt.setInt(2,    personnel.getAge());
-            stmt.setString(3, personnel.getGender());
+            stmt.setObject(3, getGenderId(personnel.getGender()));
             stmt.setString(4, personnel.getAddress());
             stmt.setString(5, personnel.getPhoneNumber());
-            stmt.setString(6, personnel.getTeam());
-            stmt.setString(7, personnel.getRole());
-            stmt.setString(8, personnel.getStatus());
+            stmt.setObject(6, null); // team_id - will be set later
+            stmt.setInt(7, getRoleId(personnel.getRole()));
+            stmt.setInt(8, getStatusId(personnel.getStatus()));
 
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -114,7 +139,7 @@ public class PersonnelDao {
     }
 
     public boolean updatePersonnel(Personnel personnel) {
-        String sql = "UPDATE personnel SET personnel_name = ?, age = ?, gender = ?, address = ?, contact_number = ?, team_name = ?, role = ?, status = ? "
+        String sql = "UPDATE personnel SET personnel_name = ?, age = ?, gender_id = ?, address = ?, contact_number = ?, team_id = ?, role_id = ?, status_id = ? "
                    + "WHERE personnel_id = ?";
 
         try (Connection conn = SQLConnection.getConnection();
@@ -122,12 +147,12 @@ public class PersonnelDao {
 
             stmt.setString(1, personnel.getFullName());
             stmt.setInt(2,    personnel.getAge());
-            stmt.setString(3, personnel.getGender());
+            stmt.setObject(3, getGenderId(personnel.getGender()));
             stmt.setString(4, personnel.getAddress());
             stmt.setString(5, personnel.getPhoneNumber());
-            stmt.setString(6, personnel.getTeam());
-            stmt.setString(7, personnel.getRole());
-            stmt.setString(8, personnel.getStatus());
+            stmt.setObject(6, null); // team_id - will be set later
+            stmt.setInt(7, getRoleId(personnel.getRole()));
+            stmt.setInt(8, getStatusId(personnel.getStatus()));
             stmt.setInt(9, personnel.getId());
 
             return stmt.executeUpdate() > 0;
@@ -154,12 +179,12 @@ public class PersonnelDao {
     }
 
     public boolean updateStatus(int id, String status) {
-        String sql = "UPDATE personnel SET status = ? WHERE personnel_id = ?";
+        String sql = "UPDATE personnel SET status_id = ? WHERE personnel_id = ?";
 
         try (Connection conn = SQLConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setString(1, status);
+            stmt.setInt(1, getStatusId(status));
             stmt.setInt(2, id);
 
             return stmt.executeUpdate() > 0;
@@ -188,7 +213,9 @@ public class PersonnelDao {
     }
 
     public int getActivePersonnelCount() {
-        String sql = "SELECT COUNT(*) AS count FROM personnel WHERE status = 'Active'";
+        String sql = "SELECT COUNT(*) AS count FROM personnel p " +
+                     "JOIN status_lookup sl ON p.status_id = sl.status_id " +
+                     "WHERE sl.status_key = 'ACTIVE'";
 
         try (Connection conn = SQLConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
@@ -205,7 +232,9 @@ public class PersonnelDao {
     }
 
     public int getUnassignedPersonnelCount() {
-        String sql = "SELECT COUNT(*) AS count FROM personnel WHERE status = 'Unassigned'";
+        String sql = "SELECT COUNT(*) AS count FROM personnel p " +
+                     "JOIN status_lookup sl ON p.status_id = sl.status_id " +
+                     "WHERE sl.status_key = 'UNASSIGNED'";
 
         try (Connection conn = SQLConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
@@ -259,5 +288,41 @@ public class PersonnelDao {
             }
         }
         return 0;
+    }
+
+    private Integer getStatusId(String statusName) throws SQLException {
+        if (statusName == null || statusName.trim().isEmpty()) return 32; // Default to UNASSIGNED for personnel
+        String sql = "SELECT status_id FROM status_lookup WHERE status_key = ? AND status_domain_id = 10"; // Personnel domain
+        try (Connection conn = SQLConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, statusName.toUpperCase());
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt("status_id") : 32; // Default to UNASSIGNED
+            }
+        }
+    }
+
+    private Integer getRoleId(String roleName) throws SQLException {
+        if (roleName == null || roleName.trim().isEmpty()) return 3; // Default to PERSONNEL
+        String sql = "SELECT role_id FROM role_lookup WHERE role_key = ?";
+        try (Connection conn = SQLConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, roleName.toUpperCase());
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt("role_id") : 3; // Default to PERSONNEL
+            }
+        }
+    }
+
+    private Integer getGenderId(String genderName) throws SQLException {
+        if (genderName == null || genderName.trim().isEmpty()) return null;
+        String sql = "SELECT gender_id FROM gender_lookup WHERE gender_key = ?";
+        try (Connection conn = SQLConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, genderName.toUpperCase());
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt("gender_id") : null;
+            }
+        }
     }
 }

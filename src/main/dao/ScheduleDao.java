@@ -17,14 +17,16 @@ public class ScheduleDao {
 
     public List<Schedule> findAll() {
         List<Schedule> results = new ArrayList<>();
-        String sql = "SELECT s.schedule_id, s.barangay_id, s.team_id, s.schedule_date, s.schedule_time, s.status,"
-                + " b.barangay_name, b.contact, ba.barangay_admin, t.team_name,"
-                + " tr.plate_number AS truck_plate_number, tr.truck_type, tr.assigned_team"
+        String sql = "SELECT s.schedule_id, s.barangay_id, s.team_id, s.schedule_date, s.schedule_time, sl.status_label as status,"
+                + " b.barangay_name, b.contact, ba.admin_name as barangay_admin, t.team_name,"
+                + " tr.plate_number AS truck_plate_number, ttl.truck_type_label as truck_type"
                 + " FROM schedule s"
+                + " LEFT JOIN status_lookup sl ON s.status_id = sl.status_id"
                 + " LEFT JOIN barangay b ON s.barangay_id = b.barangay_id"
                 + " LEFT JOIN barangay_admin ba ON b.barangay_id = ba.barangay_id"
                 + " LEFT JOIN team t ON s.team_id = t.team_id"
-                + " LEFT JOIN truck tr ON (t.truck_id = tr.truck_id OR UPPER(TRIM(tr.assigned_team)) = UPPER(TRIM(t.team_name)))"
+                + " LEFT JOIN truck tr ON t.truck_id = tr.truck_id"
+                + " LEFT JOIN truck_type_lookup ttl ON tr.truck_type_id = ttl.truck_type_id"
                 + " ORDER BY s.schedule_date ASC, s.schedule_time ASC, b.barangay_name ASC";
 
         try (Connection conn = SQLConnection.getConnection();
@@ -89,12 +91,14 @@ public class ScheduleDao {
     }
 
     public CollectionInfo findCurrentCollectionInfo(String barangayName) {
-        String sql = "SELECT t.team_name, tr.plate_number AS truck_plate_number, tr.truck_type,"
-                + " s.schedule_time, s.status"
+        String sql = "SELECT t.team_name, tr.plate_number AS truck_plate_number, ttl.truck_type_label as truck_type,"
+                + " s.schedule_time, sl.status_label as status"
                 + " FROM schedule s"
+                + " LEFT JOIN status_lookup sl ON s.status_id = sl.status_id"
                 + " LEFT JOIN barangay b ON s.barangay_id = b.barangay_id"
                 + " LEFT JOIN team t ON s.team_id = t.team_id"
-                + " LEFT JOIN truck tr ON (t.truck_id = tr.truck_id OR UPPER(TRIM(tr.assigned_team)) = UPPER(TRIM(t.team_name)))"
+                + " LEFT JOIN truck tr ON t.truck_id = tr.truck_id"
+                + " LEFT JOIN truck_type_lookup ttl ON tr.truck_type_id = ttl.truck_type_id"
                 + " WHERE UPPER(TRIM(b.barangay_name)) = UPPER(TRIM(?))"
                 + " ORDER BY s.schedule_date ASC, s.schedule_time ASC LIMIT 1";
 
@@ -124,7 +128,7 @@ public class ScheduleDao {
         setNullableTeamId(stmt, index++, teamId);
         stmt.setDate(index++, schedule.getDate() == null ? null : Date.valueOf(schedule.getDate()));
         stmt.setTime(index++, schedule.getTime() == null ? null : Time.valueOf(schedule.getTime()));
-        stmt.setString(index, isBlank(schedule.getStatus()) ? "Scheduled" : schedule.getStatus());
+        stmt.setInt(index, getStatusId(isBlank(schedule.getStatus()) ? "SCHEDULED" : schedule.getStatus()));
     }
 
     private Schedule map(ResultSet rs) throws SQLException {
@@ -193,5 +197,17 @@ public class ScheduleDao {
 
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    private Integer getStatusId(String statusName) throws SQLException {
+        if (statusName == null || statusName.trim().isEmpty()) return 24; // Default to SCHEDULED for schedule
+        String sql = "SELECT status_id FROM status_lookup WHERE status_key = ? AND status_domain_id = 8"; // Schedule domain
+        try (Connection conn = SQLConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, statusName.toUpperCase());
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt("status_id") : 24; // Default to SCHEDULED
+            }
+        }
     }
 }

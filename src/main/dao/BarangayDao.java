@@ -14,10 +14,7 @@ import main.model.Barangay;
 public class BarangayDao {
 
     public boolean save(Barangay barangay) throws SQLException {
-        // Ensure new columns exist
-        ensureNewColumns();
-        
-        String sql = "INSERT INTO barangay(barangay_name, barangay_household, purok_count, population, contact, collection_day, status)"
+        String sql = "INSERT INTO barangay(barangay_name, barangay_household, purok_count, population, contact, collection_day, status_id)"
                 + " VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = SQLConnection.getConnection();
@@ -37,10 +34,8 @@ public class BarangayDao {
     }
 
     public boolean update(Barangay barangay) throws SQLException {
-        ensureNewColumns();
-        
         String sql = "UPDATE barangay SET barangay_name = ?, barangay_household = ?, purok_count = ?, population = ?, contact = ?,"
-                + " collection_day = ?, status = ? WHERE barangay_id = ?";
+                + " collection_day = ?, status_id = ? WHERE barangay_id = ?";
 
         try (Connection conn = SQLConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -58,8 +53,11 @@ public class BarangayDao {
     }
 
     public Barangay findById(int id) throws SQLException {
+        String sql = "SELECT b.*, sl.status_label as status FROM barangay b " +
+                     "LEFT JOIN status_lookup sl ON b.status_id = sl.status_id " +
+                     "WHERE b.barangay_id = ?";
         try (Connection conn = SQLConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement("SELECT * FROM barangay WHERE barangay_id = ?")) {
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? map(rs) : null;
@@ -69,8 +67,11 @@ public class BarangayDao {
 
     public List<Barangay> findAll() throws SQLException {
         List<Barangay> results = new ArrayList<Barangay>();
+        String sql = "SELECT b.*, sl.status_label as status FROM barangay b " +
+                     "LEFT JOIN status_lookup sl ON b.status_id = sl.status_id " +
+                     "ORDER BY b.barangay_name";
         try (Connection conn = SQLConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement("SELECT * FROM barangay ORDER BY barangay_name");
+             PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 results.add(map(rs));
@@ -80,9 +81,11 @@ public class BarangayDao {
     }
 
     public Barangay findByName(String name) throws SQLException {
+        String sql = "SELECT b.*, sl.status_label as status FROM barangay b " +
+                     "LEFT JOIN status_lookup sl ON b.status_id = sl.status_id " +
+                     "WHERE UPPER(TRIM(b.barangay_name)) = UPPER(TRIM(?))";
         try (Connection conn = SQLConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(
-                     "SELECT * FROM barangay WHERE UPPER(TRIM(barangay_name)) = UPPER(TRIM(?))")) {
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, name);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? map(rs) : null;
@@ -92,9 +95,11 @@ public class BarangayDao {
 
     public List<Barangay> findByCollectionDay(String day) throws SQLException {
         List<Barangay> results = new ArrayList<Barangay>();
+        String sql = "SELECT b.*, sl.status_label as status FROM barangay b " +
+                     "LEFT JOIN status_lookup sl ON b.status_id = sl.status_id " +
+                     "WHERE b.collection_day = ? ORDER BY b.barangay_name";
         try (Connection conn = SQLConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(
-                     "SELECT * FROM barangay WHERE collection_day = ? ORDER BY barangay_name")) {
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, day);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -106,7 +111,10 @@ public class BarangayDao {
     }
 
     public int getTotalSchedBarangay() throws SQLException {
-        return count("SELECT COUNT(*) FROM barangay WHERE UPPER(COALESCE(status, '')) = 'SCHEDULED'");
+        String sql = "SELECT COUNT(*) FROM barangay b " +
+                     "JOIN status_lookup sl ON b.status_id = sl.status_id " +
+                     "WHERE sl.status_key = 'SCHEDULED'";
+        return count(sql);
     }
 
     public int getTotalCount() throws SQLException {
@@ -136,9 +144,7 @@ public class BarangayDao {
         ps.setInt(4, barangay.getPopulation());
         ps.setString(5, barangay.getContact());
         ps.setString(6, barangay.getCollectionDay());
-        ps.setString(7, barangay.getStatus() == null || barangay.getStatus().trim().isEmpty()
-                ? "Active"
-                : barangay.getStatus());
+        ps.setInt(7, getStatusId(barangay.getStatus() != null ? barangay.getStatus() : "ACTIVE"));
         if (includeId) {
             ps.setInt(8, barangay.getBarangayId());
         }
@@ -185,6 +191,18 @@ public class BarangayDao {
         } finally {
             if (conn != null) {
                 conn.close();
+            }
+        }
+    }
+
+    private Integer getStatusId(String statusName) throws SQLException {
+        if (statusName == null || statusName.trim().isEmpty()) return 4; // Default to ACTIVE for barangay
+        String sql = "SELECT status_id FROM status_lookup WHERE status_key = ? AND status_domain_id = 2"; // Barangay domain
+        try (Connection conn = SQLConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, statusName.toUpperCase());
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt("status_id") : 4; // Default to ACTIVE
             }
         }
     }

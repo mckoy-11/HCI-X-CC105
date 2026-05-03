@@ -50,6 +50,11 @@ public class TruckService {
         return truckDao.getActiveTruckCount();
     }
 
+    public List<Truck> getAllUnassignedTrucks() {
+        List<Truck> trucks = truckDao.getAllUnassignedTrucks();
+        return trucks == null ? Collections.<Truck>emptyList() : trucks;
+    }
+
     private void publish(boolean success) {
         if (success) {
             DataChangeBus.publish(DataTopics.TRUCKS, DataTopics.TEAMS, DataTopics.DASHBOARD);

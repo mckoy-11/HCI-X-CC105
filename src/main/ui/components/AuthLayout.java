@@ -134,7 +134,7 @@ public class AuthLayout extends JPanel {
         wrapper.setOpaque(true);
 
         formContent.setLayout(new BoxLayout(formContent, BoxLayout.Y_AXIS));
-        formContent.setAlignmentX(Component.LEFT_ALIGNMENT);
+        formContent.setAlignmentX(Component.CENTER_ALIGNMENT);
         formContent.setMaximumSize(new Dimension(FORM_WIDTH, Integer.MAX_VALUE));
 
         wrapper.add(formContent, centeredConstraints());

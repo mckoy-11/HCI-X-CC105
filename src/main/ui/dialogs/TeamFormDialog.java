@@ -1,20 +1,21 @@
 package main.ui.dialogs;
 
-import java.awt.*;
-import java.util.*;
-import java.util.List;
-import javax.swing.*;
 import main.model.Team;
 import main.model.Truck;
 import main.model.Personnel;
 import main.service.TeamService;
 import main.service.TruckService;
 import main.service.PersonnelService;
-import static main.style.SystemStyle.*;
 import main.style.BaseFormDialog;
-import main.style.SystemStyle;
 
-public final class TeamFormDialog extends BaseFormDialog {
+import javax.swing.*;
+import java.awt.*;
+import java.util.*;
+import java.util.List;
+
+import static main.style.SystemStyle.*;
+
+public class TeamFormDialog extends BaseFormDialog {
 
     private final TeamService teamService = new TeamService();
     private final TruckService truckService = new TruckService();
@@ -23,313 +24,339 @@ public final class TeamFormDialog extends BaseFormDialog {
     private final JTextField teamNameField = styleInput(new JTextField());
     private final JComboBox<Personnel> leaderCombo = styleComboBox(new JComboBox<>());
     private final JComboBox<Personnel> driverCombo = styleComboBox(new JComboBox<>());
-    private final JComboBox<Truck> truckComboBox = styleComboBox(new JComboBox<>());
+    private final JComboBox<Truck> truckCombo = styleComboBox(new JComboBox<>());
 
-    private final JPanel collectorListPanel;
-    private final Map<Integer, JCheckBox> collectorCheckboxes = new HashMap<>();
-    private final JLabel memberCountLabel;
+    private final JPanel collectorPanel = new JPanel();
+    private final Map<Integer, JCheckBox> collectorMap = new LinkedHashMap<>();
+    private final JLabel countLabel = new JLabel();
 
-    private List<Personnel> personnelList = new ArrayList<>();
+    private final List<Personnel> personnelList = new ArrayList<>();
 
-    private static final int MAX_MEMBERS = 6;
+    private static final int MAX_COLLECTORS = 6;
 
-    private final Team existingTeam;
-    private final boolean isEditMode;
+    private final Team existing;
+    private final boolean editMode;
 
     public TeamFormDialog(Frame parent, Team team) {
         super(parent, team == null ? "Create Team" : "Edit Team");
-        this.existingTeam = team;
-        this.isEditMode = team != null;
 
-        this.collectorListPanel = new JPanel();
-        this.memberCountLabel = new JLabel("0/" + MAX_MEMBERS);
-        memberCountLabel.setFont(BUTTONBOLD.deriveFont(14f));
-        memberCountLabel.setForeground(PRIMARY);
+        this.existing = team;
+        this.editMode = team != null;
 
         loadData();
-        populateData();
+        buildCollectors();
+        populate();
+
         initFormBody();
         bindEvents();
-        updateMemberCount();
-        updateLeaderDriverAvailability();
+        updateCount();
     }
 
     @Override
     protected JPanel createFormBody() {
-        JPanel leftPanel = new JPanel(new BorderLayout(0, 10));
-        leftPanel.setOpaque(false);
-        leftPanel.setPreferredSize(new Dimension(220, 0));
+        JPanel root = new JPanel(new BorderLayout(20, 0));
+        root.setOpaque(false);
 
-        JPanel collectorHeader = new JPanel(new BorderLayout());
-        collectorHeader.setOpaque(false);
+        root.add(buildCollectorSection(), BorderLayout.WEST);
+        root.add(buildFormSection(), BorderLayout.CENTER);
 
-        JLabel collectorTitle = createFieldLabel("Collectors (max " + (MAX_MEMBERS - 2) + ")");
-        collectorHeader.add(collectorTitle, BorderLayout.NORTH);
-
-        memberCountLabel.setForeground(PRIMARY);
-        memberCountLabel.setFont(BUTTONBOLD.deriveFont(13f));
-        collectorHeader.add(memberCountLabel, BorderLayout.EAST);
-
-        collectorListPanel.setLayout(new BoxLayout(collectorListPanel, BoxLayout.Y_AXIS));
-        collectorListPanel.setBackground(WHITE);
-
-        JScrollPane collectorScroll = new JScrollPane(collectorListPanel);
-        collectorScroll.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200)));
-        collectorScroll.setPreferredSize(new Dimension(200, 200));
-        collectorScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-
-        leftPanel.add(collectorHeader, BorderLayout.NORTH);
-        leftPanel.add(collectorScroll, BorderLayout.CENTER);
-
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.anchor = GridBagConstraints.WEST;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.weightx = 1.0;
-        gbc.gridy = 0;
-
-        addFormField(gbc, "Team Name", teamNameField);
-        gbc.gridy++;
-
-        addFormField(gbc, "Assigned Truck", truckComboBox);
-        gbc.gridy++;
-
-        addFormField(gbc, "Driver", driverCombo);
-        gbc.gridy++;
-
-        addFormField(gbc, "Team Leader (Supervisor)", leaderCombo);
-
-        JPanel sidePanel = new JPanel(new BorderLayout(15, 0));
-        sidePanel.setOpaque(false);
-        sidePanel.add(leftPanel, BorderLayout.WEST);
-        sidePanel.add(new JPanel(), BorderLayout.CENTER);
-
-        addFormFieldFull(gbc, null, sidePanel);
-
-        return null;
+        return root;
     }
 
-    @Override
-    protected void saveForm() {
-        if (teamNameField.getText().trim().isEmpty()) {
-            showError("Team name is required");
-            return;
-        }
+    private JPanel buildCollectorSection() {
+        JPanel panel = new JPanel(new BorderLayout(0, 10));
+        panel.setOpaque(false);
+        panel.setPreferredSize(new Dimension(220, 400));
 
-        int selectedCount = getSelectedCollectorCount();
-        if (driverCombo.getSelectedItem() != null) selectedCount++;
-        if (leaderCombo.getSelectedItem() != null) selectedCount++;
+        JLabel title = createFieldLabel("Collectors (max " + MAX_COLLECTORS + ")");
+        countLabel.setFont(BUTTONBOLD);
+        countLabel.setForeground(PRIMARY);
 
-        if (selectedCount > MAX_MEMBERS) {
-            showError("Team cannot exceed " + MAX_MEMBERS + " members");
-            return;
-        }
+        JPanel header = new JPanel(new BorderLayout());
+        header.setOpaque(false);
+        header.add(title, BorderLayout.WEST);
+        header.add(countLabel, BorderLayout.EAST);
 
-        Team team = existingTeam != null ? existingTeam : new Team();
-        team.setTeamName(teamNameField.getText().trim());
-        team.setStatus("Unassigned");
+        collectorPanel.setLayout(new BoxLayout(collectorPanel, BoxLayout.Y_AXIS));
+        collectorPanel.setBackground(WHITE);
 
-        Personnel leader = (Personnel) leaderCombo.getSelectedItem();
-        Personnel driver = (Personnel) driverCombo.getSelectedItem();
-        Truck truck = (Truck) truckComboBox.getSelectedItem();
+        JScrollPane scroll = new JScrollPane(collectorPanel);
+        scroll.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200)));
 
-        team.setLeaderId(leader != null ? leader.getId() : 0);
-        team.setDriverId(driver != null ? driver.getId() : 0);
-        team.setTruckId(truck != null ? truck.getId() : 0);
+        panel.add(header, BorderLayout.NORTH);
+        panel.add(scroll, BorderLayout.CENTER);
 
-        boolean ok = isEditMode ? teamService.updateTeam(team) : teamService.addTeam(team);
+        return panel;
+    }
 
-        if (ok) dispose();
-        else showError("Save failed");
+    private JPanel buildFormSection() {
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setOpaque(false);
+
+        GridBagConstraints g = new GridBagConstraints();
+        g.gridx = 0;
+        g.gridy = 0;
+        g.weightx = 1;
+        g.fill = GridBagConstraints.HORIZONTAL;
+        g.insets = new Insets(0, 0, 12, 0);
+
+        addField(panel, g, "Team Name", teamNameField);
+        g.gridy++;
+
+        addField(panel, g, "Truck", truckCombo);
+        g.gridy++;
+
+        addField(panel, g, "Driver", driverCombo);
+        g.gridy++;
+
+        addField(panel, g, "Leader", leaderCombo);
+
+        return panel;
+    }
+
+    private void addField(JPanel panel, GridBagConstraints g, String label, JComponent input) {
+        JPanel wrap = new JPanel(new BorderLayout(0, 6));
+        wrap.setOpaque(false);
+
+        wrap.add(createFieldLabel(label), BorderLayout.NORTH);
+        wrap.add(input, BorderLayout.CENTER);
+
+        panel.add(wrap, g);
     }
 
     private void loadData() {
-        truckComboBox.removeAllItems();
-        for (Truck t : truckService.getAllTrucks()) {
-            truckComboBox.addItem(t);
+        loadTrucks();
+        loadPersonnel();
+    }
+
+    private void loadTrucks() {
+        truckCombo.removeAllItems();
+
+        List<Truck> trucks = truckService.getAllUnassignedTrucks();
+
+        if (editMode && existing.getTruckId() > 0) {
+            Truck t = truckService.getTruckById(existing.getTruckId());
+            if (t != null && trucks.stream().noneMatch(x -> x.getId() == t.getId())) {
+                trucks.add(0, t);
+            }
         }
 
+        for (Truck t : trucks) {
+            truckCombo.addItem(t);
+        }
+    }
+
+    private void loadPersonnel() {
         leaderCombo.removeAllItems();
         driverCombo.removeAllItems();
 
         personnelList.clear();
 
-        List<Personnel> all = personnelService.getAllPersonnel();
+        List<Personnel> list = personnelService.getAllUnassignedPersonnel();
 
-        for (Personnel p : all) {
-            String role = p.getRole();
-            if ("Driver".equals(role) || "Collector".equals(role) || "Supervisor".equals(role)) {
-                personnelList.add(p);
+        if (editMode) {
+            includeExisting(list);
+        }
+
+        for (Personnel p : list) {
+            personnelList.add(p);
+
+            if (isDriverOrLeader(p)) {
                 leaderCombo.addItem(p);
                 driverCombo.addItem(p);
             }
         }
-
-        collectorListPanel.removeAll();
-        collectorCheckboxes.clear();
-
-        for (Personnel p : all) {
-            if ("Collector".equals(p.getRole())) {
-                JCheckBox cb = new JCheckBox(p.getFullName());
-                cb.setBackground(WHITE);
-                cb.setFont(BODYPLAIN.deriveFont(13f));
-                collectorCheckboxes.put(p.getId(), cb);
-                collectorListPanel.add(cb);
-                cb.addActionListener(e -> {
-                    updateMemberCount();
-                    updateLeaderDriverAvailability();
-                });
-            }
-        }
-
-        collectorListPanel.revalidate();
-        collectorListPanel.repaint();
     }
 
-    private void populateData() {
-        if (existingTeam == null) return;
+    private void buildCollectors() {
+        collectorPanel.removeAll();
+        collectorMap.clear();
 
-        teamNameField.setText(existingTeam.getTeamName());
+        for (Personnel p : personnelList) {
+            if (!"Collector".equalsIgnoreCase(p.getRole())) continue;
 
-        for (int i = 0; i < truckComboBox.getItemCount(); i++) {
-            Truck t = truckComboBox.getItemAt(i);
-            if (t != null && t.getId() == existingTeam.getTruckId()) {
-                truckComboBox.setSelectedIndex(i);
-                break;
-            }
+            JCheckBox cb = new JCheckBox(p.getFullName());
+            cb.setBackground(WHITE);
+            cb.setFont(BODYPLAIN);
+
+            collectorMap.put(p.getId(), cb);
+            collectorPanel.add(cb);
+
+            cb.addActionListener(e -> {
+                enforceLimit(cb);
+                updateCount();
+                refreshAvailability();
+            });
         }
+    }
 
-        for (int i = 0; i < leaderCombo.getItemCount(); i++) {
-            Personnel p = leaderCombo.getItemAt(i);
-            if (p != null && p.getId() == existingTeam.getLeaderId()) {
-                leaderCombo.setSelectedIndex(i);
-                break;
-            }
-        }
+    private void populate() {
+        if (!editMode) return;
 
-        for (int i = 0; i < driverCombo.getItemCount(); i++) {
-            Personnel p = driverCombo.getItemAt(i);
-            if (p != null && p.getId() == existingTeam.getDriverId()) {
-                driverCombo.setSelectedIndex(i);
-                break;
-            }
+        teamNameField.setText(existing.getTeamName());
+
+        selectCombo(truckCombo, existing.getTruckId());
+        selectCombo(leaderCombo, existing.getLeaderId());
+        selectCombo(driverCombo, existing.getDriverId());
+
+        for (Integer id : existing.getCollectorIds()) {
+            JCheckBox cb = collectorMap.get(id);
+            if (cb != null) cb.setSelected(true);
         }
     }
 
     private void bindEvents() {
-        leaderCombo.addActionListener(e -> {
-            updateLeaderDriverAvailability();
-            updateCollectorAvailability();
-            updateMemberCount();
-        });
-
-        driverCombo.addActionListener(e -> {
-            updateLeaderDriverAvailability();
-            updateCollectorAvailability();
-            updateMemberCount();
-        });
+        leaderCombo.addActionListener(e -> refreshAvailability());
+        driverCombo.addActionListener(e -> refreshAvailability());
     }
 
-    private int getSelectedCollectorCount() {
-        int count = 0;
-        for (JCheckBox cb : collectorCheckboxes.values()) {
-            if (cb.isSelected()) count++;
-        }
-        return count;
-    }
+    private void refreshAvailability() {
+        List<Integer> selectedCollectors = getSelectedCollectorIds();
 
-    private void updateMemberCount() {
-        int count = getSelectedCollectorCount();
-        if (driverCombo.getSelectedItem() != null) count++;
-        if (leaderCombo.getSelectedItem() != null) count++;
-
-        memberCountLabel.setText(count + "/" + MAX_MEMBERS);
-
-        if (count > MAX_MEMBERS) memberCountLabel.setForeground(ERROR_TEXT);
-        else memberCountLabel.setForeground(PRIMARY);
-    }
-
-    private void updateLeaderDriverAvailability() {
         Personnel leader = (Personnel) leaderCombo.getSelectedItem();
         Personnel driver = (Personnel) driverCombo.getSelectedItem();
 
-        DefaultComboBoxModel<Personnel> leaderModel = new DefaultComboBoxModel<>();
-        DefaultComboBoxModel<Personnel> driverModel = new DefaultComboBoxModel<>();
+        for (Map.Entry<Integer, JCheckBox> entry : collectorMap.entrySet()) {
+            int id = entry.getKey();
+            JCheckBox cb = entry.getValue();
 
-        Set<Personnel> blocked = new HashSet<>();
-        if (leader != null) blocked.add(leader);
-        if (driver != null) blocked.add(driver);
+            boolean locked =
+                    (leader != null && leader.getId() == id) ||
+                    (driver != null && driver.getId() == id);
 
-        for (JCheckBox cb : collectorCheckboxes.values()) {
-            if (cb.isSelected()) {
-                Personnel p = findPersonnelByName(cb.getText());
-                if (p != null) blocked.add(p);
+            cb.setEnabled(!locked);
+
+            if (locked) cb.setSelected(false);
+        }
+    }
+
+    private void enforceLimit(JCheckBox changed) {
+        if (getSelectedCollectorIds().size() <= MAX_COLLECTORS) return;
+
+        changed.setSelected(false);
+        showError("Max collectors is " + MAX_COLLECTORS);
+    }
+
+    private void updateCount() {
+        countLabel.setText(getSelectedCollectorIds().size() + "/" + MAX_COLLECTORS);
+    }
+
+    private List<Integer> getSelectedCollectorIds() {
+        List<Integer> ids = new ArrayList<>();
+
+        for (Map.Entry<Integer, JCheckBox> e : collectorMap.entrySet()) {
+            if (e.getValue().isSelected()) {
+                ids.add(e.getKey());
             }
         }
 
-        for (Personnel p : personnelList) {
-            if (driver == null || !p.equals(driver)) leaderModel.addElement(p);
-            if (leader == null || !p.equals(leader)) driverModel.addElement(p);
+        return ids;
+    }
+
+    private List<String> getSelectedCollectorNames() {
+        List<String> names = new ArrayList<>();
+
+        for (Integer id : getSelectedCollectorIds()) {
+            Personnel p = findById(id);
+            if (p != null) names.add(p.getFullName());
         }
 
-        leaderCombo.setModel(leaderModel);
-        driverCombo.setModel(driverModel);
-
-        if (leader != null && !leader.equals(driver)) leaderCombo.setSelectedItem(leader);
-        if (driver != null && !driver.equals(leader)) driverCombo.setSelectedItem(driver);
+        return names;
     }
-    
-    private void updateCollectorAvailability() {
-        Personnel leader = (Personnel) leaderCombo.getSelectedItem();
-        Personnel driver = (Personnel) driverCombo.getSelectedItem();
-        
-        for (Integer personnelId : collectorCheckboxes.keySet()) {
-            JCheckBox cb = collectorCheckboxes.get(personnelId);
-            Personnel p = findPersonnelById(personnelId);
-            
-            if (p != null) {
-                boolean isLeaderOrDriver = (leader != null && leader.getId() == p.getId()) || 
-                                          (driver != null && driver.getId() == p.getId());
-                
-                // Disable checkbox if this person is leader or driver
-                cb.setEnabled(!isLeaderOrDriver);
-                
-                // Uncheck if they were just selected as leader/driver
-                if (isLeaderOrDriver && cb.isSelected()) {
-                    cb.setSelected(false);
-                }
+
+    private void includeExisting(List<Personnel> list) {
+        addIfMissing(list, existing.getLeaderId());
+        addIfMissing(list, existing.getDriverId());
+
+        for (Integer id : existing.getCollectorIds()) {
+            addIfMissing(list, id);
+        }
+    }
+
+    private void addIfMissing(List<Personnel> list, int id) {
+        if (id <= 0) return;
+
+        boolean exists = list.stream().anyMatch(p -> p.getId() == id);
+        if (!exists) {
+            Personnel p = personnelService.getPersonnelById(id);
+            if (p != null) list.add(p);
+        }
+    }
+
+    private Personnel findById(int id) {
+        return personnelList.stream()
+                .filter(p -> p.getId() == id)
+                .findFirst()
+                .orElse(null);
+    }
+
+    private boolean isDriverOrLeader(Personnel p) {
+        String r = p.getRole();
+        return "Driver".equalsIgnoreCase(r) || "Supervisor".equalsIgnoreCase(r);
+    }
+
+    private <T> void selectCombo(JComboBox<T> combo, int id) {
+        for (int i = 0; i < combo.getItemCount(); i++) {
+            Object o = combo.getItemAt(i);
+            if (o instanceof Personnel && ((Personnel) o).getId() == id) {
+                combo.setSelectedIndex(i);
+                return;
+            }
+            if (o instanceof Truck && ((Truck) o).getId() == id) {
+                combo.setSelectedIndex(i);
+                return;
             }
         }
     }
-    
-    private Personnel findPersonnelById(int id) {
-        for (Personnel p : personnelList) {
-            if (p.getId() == id) return p;
+
+    @Override
+    protected void saveForm() {
+        if (teamNameField.getText().trim().isEmpty()) {
+            showError("Team name required");
+            return;
         }
-        return null;
+
+        Team t = editMode ? existing : new Team();
+
+        t.setTeamName(teamNameField.getText().trim());
+        t.setLeaderId(getId(leaderCombo));
+        t.setDriverId(getId(driverCombo));
+        t.setTruckId(getId(truckCombo));
+
+        t.setCollectorIds(getSelectedCollectorIds());
+        t.setCollectorNames(getSelectedCollectorNames());
+
+        t.setStatus("Unassigned");
+
+        boolean ok = editMode
+                ? teamService.updateTeam(t)
+                : teamService.addTeam(t);
+
+        if (ok) dispose();
+        else showError("Save failed");
     }
 
-    private Personnel findPersonnelByName(String name) {
-        for (Personnel p : personnelList) {
-            if (p.getFullName().equals(name)) return p;
-        }
-        return null;
+    private int getId(JComboBox<?> combo) {
+        Object o = combo.getSelectedItem();
+        if (o instanceof Personnel) return ((Personnel) o).getId();
+        if (o instanceof Truck) return ((Truck) o).getId();
+        return 0;
     }
 
     @Override
     protected JPanel createActions() {
-        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
-        actions.setOpaque(false);
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        panel.setOpaque(false);
 
-        JButton cancelBtn = SystemStyle.createFormButton("Cancel", false);
-        cancelBtn.addActionListener(e -> dispose());
+        JButton cancel = createFormButton("Cancel", false);
+        cancel.addActionListener(e -> dispose());
 
-        JButton saveBtn = SystemStyle.createFormButton("Save Team", true);
-        saveBtn.addActionListener(e -> saveForm());
+        JButton save = createFormButton("Save", true);
+        save.addActionListener(e -> saveForm());
 
-        actions.add(cancelBtn);
-        actions.add(Box.createHorizontalStrut(ROW_SPACING));
-        actions.add(saveBtn);
+        panel.add(cancel);
+        panel.add(save);
 
-        return actions;
+        return panel;
     }
 }

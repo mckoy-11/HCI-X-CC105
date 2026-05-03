@@ -21,7 +21,10 @@ public class TruckDao {
 
     public List<Truck> getAllTrucks() {
         List<Truck> trucks = new ArrayList<Truck>();
-        String sql = "SELECT * FROM " + TRUCK_TABLE + " ORDER BY plate_number ASC";
+        String sql = "SELECT t.*, sl.status_label as status, ttl.truck_type_label as truck_type FROM " + TRUCK_TABLE + " t " +
+                     "LEFT JOIN status_lookup sl ON t.status_id = sl.status_id " +
+                     "LEFT JOIN truck_type_lookup ttl ON t.truck_type_id = ttl.truck_type_id " +
+                     "ORDER BY t.plate_number ASC";
 
         try (Connection conn = SQLConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
@@ -38,7 +41,10 @@ public class TruckDao {
     }
 
     public Truck getTruckById(int id) {
-        String sql = "SELECT * FROM " + TRUCK_TABLE + " WHERE truck_id = ?";
+        String sql = "SELECT t.*, sl.status_label as status, ttl.truck_type_label as truck_type FROM " + TRUCK_TABLE + " t " +
+                     "LEFT JOIN status_lookup sl ON t.status_id = sl.status_id " +
+                     "LEFT JOIN truck_type_lookup ttl ON t.truck_type_id = ttl.truck_type_id " +
+                     "WHERE t.truck_id = ?";
 
         try (Connection conn = SQLConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -167,7 +173,9 @@ public class TruckDao {
     }
 
     public int getActiveTruckCount() {
-        String sql = "SELECT COUNT(*) as count FROM " + TRUCK_TABLE + " WHERE status = 'Active'";
+        String sql = "SELECT COUNT(*) AS count FROM " + TRUCK_TABLE + " t " +
+                     "JOIN status_lookup sl ON t.status_id = sl.status_id " +
+                     "WHERE sl.status_key = 'ACTIVE'";
 
         try (Connection conn = SQLConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
@@ -183,15 +191,35 @@ public class TruckDao {
         return 0;
     }
 
+    public List<Truck> getAllUnassignedTrucks() {
+        List<Truck> trucks = new ArrayList<>();
+        String sql = "SELECT t.*, sl.status_label as status, ttl.truck_type_label as truck_type FROM " + TRUCK_TABLE + " t " +
+                     "LEFT JOIN status_lookup sl ON t.status_id = sl.status_id " +
+                     "LEFT JOIN truck_type_lookup ttl ON t.truck_type_id = ttl.truck_type_id " +
+                     "WHERE sl.status_key = 'UNASSIGNED' ORDER BY t.plate_number ASC";
+
+        try (Connection conn = SQLConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            while (rs.next()) {
+                trucks.add(mapResultSetToTruck(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return trucks;
+    }
+
     private Truck mapResultSetToTruck(ResultSet rs) throws SQLException {
         Truck truck = new Truck();
         truck.setId(rs.getInt("truck_id"));
         truck.setPlateNumber(rs.getString("plate_number"));
         truck.setTruckType(rs.getString("truck_type"));
         truck.setCapacity(getString(rs, "capacity", "truck_capacity"));
-        truck.setAssignedBarangay(getString(rs, "assigned_barangay", "barangay_assigned", "barangay_name"));
         truck.setStatus(rs.getString("status"));
-        truck.setAssignedTeam(getString(rs, "assigned_team"));
+        truck.setAssignedTeam(null); // No longer stored in truck table in normalized schema
         return truck;
     }
 

@@ -4,9 +4,7 @@ import java.awt.*;
 import java.util.List;
 import javax.swing.*;
 import main.model.Truck;
-import main.model.Team;
 import main.service.TruckService;
-import main.service.TeamService;
 import static main.style.SystemStyle.*;
 import main.style.BaseFormDialog;
 import main.store.DataChangeBus;
@@ -20,45 +18,26 @@ import main.style.SystemStyle;
 public final class TruckFormDialog extends BaseFormDialog {
 
     private final TruckService truckService = new TruckService();
-    private final TeamService teamService = new TeamService();
     
     private final JTextField plateNumberField = styleInput(new JTextField());
     private final JTextField capacityField = styleInput(new JTextField());
     private final JComboBox<String> truckTypeComboBox;
-    private final JComboBox<String> statusComboBox;
     
     private final Truck existingTruck;
     private final boolean isEditMode;
-    
-// Team to assign when creating (set from TeamFormDialog)
-    private Team teamToAssign;
 
     /**
      * Constructor with 2 parameters (for Management.java calls)
-     * Used when adding new truck or editing existing truck without preset team
+     * Used when adding new truck or editing existing truck
      */
     public TruckFormDialog(Frame parent, Truck truck) {
-        this(parent, truck, null);
-    }
-    
-    /**
-     * Constructor with 3 parameters (for full team assignment)
-     * Used when creating truck from TeamFormDialog with preset team
-     */
-    public TruckFormDialog(Frame parent, Truck truck, Team teamToAssign) {
         super(parent, truck == null ? "Add Truck" : "Edit Truck");
         this.existingTruck = truck;
         this.isEditMode = truck != null;
-        this.teamToAssign = teamToAssign;
         
-        // Initialize combo boxes - truck type and status
+        // Initialize combo boxes - truck type only
         this.truckTypeComboBox = styleComboBox(new JComboBox<>(new String[]{"Compactor", "Dump Truck", "Garbage Truck", "Container Carrier", "Other"}));
-        this.statusComboBox = styleComboBox(new JComboBox<>(new String[]{"Active", "Inactive", "Maintenance", "Decommissioned"}));
         
-        // Default status when adding = Unassigned
-        if (!isEditMode) {
-            statusComboBox.setSelectedItem("Active");
-        }
         populateData();
         
         // Initialize form body after fields are set up
@@ -79,10 +58,6 @@ public final class TruckFormDialog extends BaseFormDialog {
         
         // Truck Type and Capacity
         addFormRow(gbc, "Truck Type", truckTypeComboBox, "Capacity (kg)", capacityField);
-        gbc.gridy++;
-        
-        // Status
-        addFormField(gbc, "Status", statusComboBox);
         
         return null;
     }
@@ -100,7 +75,12 @@ public final class TruckFormDialog extends BaseFormDialog {
             truck.setPlateNumber(plateNumberField.getText().trim().toUpperCase());
             truck.setTruckType((String) truckTypeComboBox.getSelectedItem());
             truck.setCapacity(capacityField.getText().trim());
-            truck.setStatus("Unassigned");
+
+            if (isEditMode) {
+                truck.setStatus(existingTruck.getStatus());
+            } else {
+                truck.setStatus("Unassigned");
+            }
             
             boolean success;
             if (isEditMode) {
@@ -133,10 +113,6 @@ public final class TruckFormDialog extends BaseFormDialog {
                 truckTypeComboBox.setSelectedItem(existingTruck.getTruckType());
             }
             
-            // Select status
-            if (existingTruck.getStatus() != null) {
-                statusComboBox.setSelectedItem(existingTruck.getStatus());
-            }
         }
     }
     

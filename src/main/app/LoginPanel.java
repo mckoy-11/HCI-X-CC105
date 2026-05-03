@@ -69,6 +69,13 @@ private final Runnable onMenro;
 
         JButton back = createLinkButton("Back to welcome");
         back.addActionListener(e -> runAction(onBack));
+        
+        JButton forgotPassword = createLinkButton("Forgot password?");
+        forgotPassword.addActionListener(e -> performForgotPassword());
+        
+        JPanel forgotPanel = createTransparentPanel(new FlowLayout(FlowLayout.RIGHT));
+        forgotPanel.setPreferredSize(new Dimension(0, 30));
+        forgotPanel.add(forgotPassword);
 
         JButton login = createPrimaryButton("Sign In");
         login.addActionListener(e -> performLogin());
@@ -97,8 +104,12 @@ private final Runnable onMenro;
         form.add(createFieldGroup("Email address", emailField));
         form.add(Box.createVerticalStrut(16));
         form.add(createFieldGroup("Password", passField));
+        form.add(Box.createVerticalStrut(8));
+         form.add(createFieldGroup("", forgotPanel));
         form.add(Box.createVerticalStrut(24));
         form.add(login);
+        form.add(Box.createVerticalStrut(8));
+        
         form.add(Box.createVerticalStrut(12));
         form.add(statusLabel);
         form.add(Box.createVerticalStrut(16));
@@ -167,6 +178,33 @@ clearStatus(statusLabel);
         }
     }
 
+    private void performForgotPassword() {
+        String email = emailField.getText().trim();
+
+        if (email.isEmpty()) {
+            showError(statusLabel, "Enter your email address first.");
+            return;
+        }
+
+        if (authService == null) {
+            try {
+                Connection conn = SQLConnection.getConnection();
+                authService = new AuthService(new AccountDao(conn));
+            } catch (SQLException e) {
+                showError(statusLabel, "Unable to connect to the database.");
+                return;
+            }
+        }
+
+        String result = authService.resetPassword(email);
+
+        if ("SUCCESS".equals(result)) {
+            showSuccess(statusLabel, "Password reset to '123456'. Please change it after logging in.");
+        } else {
+            showError(statusLabel, result);
+        }
+    }
+
     private void registerStatusReset() {
         DocumentListener clearOnChange = new DocumentListener() {
             @Override
@@ -200,6 +238,7 @@ private void runAction(Runnable action) {
     
     /**
      * Get the last logged in account (for checking barangay setup status)
+     * @return 
      */
     public Account getLastLoggedInAccount() {
         return lastLoggedInAccount;

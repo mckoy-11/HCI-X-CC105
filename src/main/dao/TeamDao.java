@@ -175,9 +175,7 @@ public class TeamDao {
             if (flags.hasPersonnelTeamName && !isBlank(existing.getTeamName())) {
                 clearPersonnelAssignments(conn, existing.getTeamName());
             }
-            if (flags.hasTruckAssignedTeam) {
-                clearTruckAssignment(conn, existing);
-            }
+            // In normalized schema, truck assignment is handled via team.truck_id foreign key
 
             try (PreparedStatement stmt = conn.prepareStatement(
                     "DELETE FROM " + TEAM_TABLE + " WHERE team_id = ?")) {
@@ -213,7 +211,10 @@ public class TeamDao {
      * @return the active team count
      */
     public int getActiveTeamCount() {
-        return countBySql("SELECT COUNT(*) AS count FROM " + TEAM_TABLE + " WHERE status = 'Active'");
+        String sql = "SELECT COUNT(*) AS count FROM " + TEAM_TABLE + " t " +
+                     "JOIN status_lookup sl ON t.status_id = sl.status_id " +
+                     "WHERE sl.status_key = 'ACTIVE'";
+        return countBySql(sql);
     }
 
     /**
@@ -248,7 +249,7 @@ public class TeamDao {
      */
     private String buildSelectSql(SchemaFlags flags, boolean byId) {
         StringBuilder sql = new StringBuilder();
-        sql.append("SELECT t.*, p.personnel_name AS leader_name");
+        sql.append("SELECT t.*, sl.status_label as status, p.personnel_name AS leader_name");
 
         if (flags.hasDriverId) {
             sql.append(", d.personnel_name AS driver_name");
@@ -258,6 +259,7 @@ public class TeamDao {
         }
 
         sql.append(" FROM ").append(TEAM_TABLE).append(" t ");
+        sql.append("LEFT JOIN status_lookup sl ON t.status_id = sl.status_id ");
         sql.append("LEFT JOIN ").append(PERSONNEL_TABLE).append(" p ON t.leader_id = p.personnel_id ");
 
         if (flags.hasDriverId) {
@@ -297,7 +299,7 @@ public class TeamDao {
             values.append(", ?");
         }
 
-        columns.append(", status");
+        columns.append(", status_id");
         values.append(", ?");
 
         return "INSERT INTO " + TEAM_TABLE + " (" + columns + ") VALUES (" + values + ")";
@@ -320,7 +322,7 @@ public class TeamDao {
             sql.append(", truck_id = ?");
         }
 
-        sql.append(", status = ? WHERE team_id = ?");
+        sql.append(", status_id = ? WHERE team_id = ?");
         return sql.toString();
     }
 
@@ -348,7 +350,7 @@ public class TeamDao {
             setNullableInt(stmt, index++, team.getTruckId());
         }
 
-        stmt.setString(index++, team.getStatus());
+        stmt.setInt(index++, getStatusId(team.getStatus()));
 
         if (includeId) {
             stmt.setInt(index, team.getId());
@@ -384,22 +386,8 @@ public class TeamDao {
             }
         }
 
-        if ((team.getTruckId() <= 0 || isBlank(team.getTruckPlateNumber()))
-                && flags.hasTruckAssignedTeam
-                && !isBlank(team.getTeamName())) {
-            try (PreparedStatement stmt = conn.prepareStatement(
-                    "SELECT truck_id, plate_number FROM " + TRUCK_TABLE
-                            + " WHERE UPPER(TRIM(assigned_team)) = UPPER(TRIM(?))"
-                            + " ORDER BY plate_number ASC LIMIT 1")) {
-                stmt.setString(1, team.getTeamName());
-                try (ResultSet rs = stmt.executeQuery()) {
-                    if (rs.next()) {
-                        team.setTruckId(rs.getInt("truck_id"));
-                        team.setTruckPlateNumber(rs.getString("plate_number"));
-                    }
-                }
-            }
-        }
+        // In normalized schema, truck_id is directly stored in team table
+        // No need to lookup by assigned_team column
     }
 
     /**
@@ -477,12 +465,8 @@ public class TeamDao {
             assignPersonnelToTeam(conn, buildAssignedPersonnelIds(team), team.getTeamName());
         }
 
-        if (flags.hasTruckAssignedTeam) {
-            if (previous != null) {
-                clearTruckAssignment(conn, previous);
-            }
-            assignTruckToTeam(conn, team);
-        }
+        // In normalized schema, truck assignment is handled via team.truck_id foreign key
+        // Set via main UPDATE statement in save method
     }
 
     /**
@@ -586,41 +570,20 @@ public class TeamDao {
         if (team == null) {
             return;
         }
-
-        if (team.getTruckId() > 0) {
-            try (PreparedStatement stmt = conn.prepareStatement(
-                    "UPDATE " + TRUCK_TABLE + " SET assigned_team = NULL WHERE truck_id = ?")) {
-                stmt.setInt(1, team.getTruckId());
-                stmt.executeUpdate();
-            }
-        } else if (!isBlank(team.getTeamName())) {
-            try (PreparedStatement stmt = conn.prepareStatement(
-                    "UPDATE " + TRUCK_TABLE
-                            + " SET assigned_team = NULL WHERE UPPER(TRIM(assigned_team)) = UPPER(TRIM(?))")) {
-                stmt.setString(1, team.getTeamName());
-                stmt.executeUpdate();
-            }
-        }
+        // In normalized schema, truck is referenced directly via team.truck_id foreign key
+        // No separate assigned_team column update needed
     }
 
     /**
-     * Assigns the selected truck to the current team name.
+     * Assigns the selected truck to the current team via the team.truck_id foreign key.
      *
      * @param conn the active connection
      * @param team the saved team
      * @throws SQLException when the update fails
      */
     private void assignTruckToTeam(Connection conn, Team team) throws SQLException {
-        if (team.getTruckId() <= 0 || isBlank(team.getTeamName())) {
-            return;
-        }
-
-        try (PreparedStatement stmt = conn.prepareStatement(
-                "UPDATE " + TRUCK_TABLE + " SET assigned_team = ? WHERE truck_id = ?")) {
-            stmt.setString(1, team.getTeamName());
-            stmt.setInt(2, team.getTruckId());
-            stmt.executeUpdate();
-        }
+        // In normalized schema, truck assignment is done through team.truck_id foreign key
+        // Handled by main UPDATE statement in save/update method
     }
 
     /**
@@ -630,7 +593,7 @@ public class TeamDao {
      * @return the distinct personnel ids
      */
     private Set<Integer> buildAssignedPersonnelIds(Team team) {
-        LinkedHashSet<Integer> ids = new LinkedHashSet<Integer>();
+        LinkedHashSet<Integer> ids = new LinkedHashSet<>();
         if (team.getLeaderId() > 0) {
             ids.add(team.getLeaderId());
         }
@@ -698,7 +661,6 @@ public class TeamDao {
         flags.hasDriverId = DbSchemaHelper.columnExists(conn, TEAM_TABLE, "driver_id");
         flags.hasTruckId = DbSchemaHelper.columnExists(conn, TEAM_TABLE, "truck_id");
         flags.hasPersonnelTeamName = DbSchemaHelper.columnExists(conn, PERSONNEL_TABLE, "team_name");
-        flags.hasTruckAssignedTeam = DbSchemaHelper.columnExists(conn, TRUCK_TABLE, "assigned_team");
         flags.hasTeamCollectorsTable = DbSchemaHelper.tableExists(conn, TEAM_COLLECTORS_TABLE);
         return flags;
     }
@@ -709,9 +671,8 @@ public class TeamDao {
      * @param conn the active connection
      */
     private void ensureOptionalSchema(Connection conn) {
-        safeAddColumn(conn, TEAM_TABLE, "driver_id", "INT NULL");
-        safeAddColumn(conn, TEAM_TABLE, "truck_id", "INT NULL");
-        safeAddColumn(conn, TRUCK_TABLE, "assigned_team", "VARCHAR(120) NULL");
+        // In normalized schema, driver_id and truck_id are already in team table
+        // Just ensure collectors table exists
         safeCreateCollectorsTable(conn);
     }
 
@@ -870,7 +831,18 @@ public class TeamDao {
         private boolean hasDriverId;
         private boolean hasTruckId;
         private boolean hasPersonnelTeamName;
-        private boolean hasTruckAssignedTeam;
         private boolean hasTeamCollectorsTable;
+    }
+
+    private Integer getStatusId(String statusName) throws SQLException {
+        if (statusName == null || statusName.trim().isEmpty()) return 21; // Default to ACTIVE for team
+        String sql = "SELECT status_id FROM status_lookup WHERE status_key = ? AND status_domain_id = 7"; // Team domain
+        try (Connection conn = SQLConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, statusName.toUpperCase());
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt("status_id") : 21; // Default to ACTIVE
+            }
+        }
     }
 }

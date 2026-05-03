@@ -41,7 +41,7 @@ public class HeaderService {
                 + " | Reports: " + s.getReports();
     }
 
-    public List<PopupItem> buildAccountItems(Runnable editName, Runnable logout) {
+    public List<PopupItem> buildAccountItems(Runnable editName, Runnable changePassword, Runnable changeEmail, Runnable logout) {
 
         List<PopupItem> items = new ArrayList<>();
 
@@ -49,6 +49,18 @@ public class HeaderService {
                 "Edit Display Name",
                 "Update profile name",
                 editName
+        ));
+
+        items.add(new PopupItem(
+                "Change Password",
+                "Update account password",
+                changePassword
+        ));
+
+        items.add(new PopupItem(
+                "Change Email",
+                "Update account email address",
+                changeEmail
         ));
 
         items.add(new PopupItem(

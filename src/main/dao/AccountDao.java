@@ -132,7 +132,7 @@ public class AccountDao {
 
     public List<Account> findAllByRole(String role) throws SQLException {
         String sql = buildAccountSelectSql(
-                "WHERE r.role_name = ? ORDER BY a.account_id ASC"
+                "WHERE r.role_key = ? ORDER BY a.account_id ASC"
         );
 
         PreparedStatement ps = conn.prepareStatement(sql);
@@ -165,11 +165,11 @@ public class AccountDao {
 
         StringBuilder sql = new StringBuilder(
             "SELECT a.account_id, a.name, a.email_address, a.password, " +
-            "s.status_name as status, r.role_name as role, a.last_login, a.is_barangay_setup_complete"
+            "s.status_label as status, r.role_key as role, a.last_login, a.is_barangay_setup_complete"
         );
 
         if (hasBarangay && hasBarangayAccountLink) {
-            sql.append(", ba.barangay_admin_id, ba.age, g.gender_name as gender, b.barangay_id, b.barangay_name ");
+            sql.append(", ba.barangay_admin_id, ba.age, g.gender_label as gender, b.barangay_id, b.barangay_name ");
             sql.append("FROM account a ");
             sql.append("LEFT JOIN status_lookup s ON a.status_id = s.status_id ");
             sql.append("LEFT JOIN role_lookup r ON a.role_id = r.role_id ");
@@ -392,7 +392,7 @@ public class AccountDao {
 
     private Integer getStatusId(String statusName) throws SQLException {
         if (statusName == null || statusName.trim().isEmpty()) return 1; // Default to first status
-        String sql = "SELECT status_id FROM status_lookup WHERE status_name = ?";
+        String sql = "SELECT status_id FROM status_lookup WHERE status_key = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, statusName);
             try (ResultSet rs = ps.executeQuery()) {
@@ -403,7 +403,7 @@ public class AccountDao {
 
     private Integer getRoleId(String roleName) throws SQLException {
         if (roleName == null || roleName.trim().isEmpty()) return 1; // Default to first role
-        String sql = "SELECT role_id FROM role_lookup WHERE role_name = ?";
+        String sql = "SELECT role_id FROM role_lookup WHERE role_key = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, roleName);
             try (ResultSet rs = ps.executeQuery()) {

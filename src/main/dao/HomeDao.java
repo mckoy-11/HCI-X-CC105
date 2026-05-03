@@ -66,7 +66,9 @@ public class HomeDao {
     }
     
     private int getCompletedCollectionCount() {
-        String sql = "SELECT COUNT(*) AS count FROM schedule WHERE status = 'Completed'";
+        String sql = "SELECT COUNT(*) AS count FROM schedule s " +
+                     "JOIN status_lookup sl ON s.status_id = sl.status_id " +
+                     "WHERE sl.status_key = 'COMPLETED'";
         try (Connection conn = SQLConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
@@ -82,7 +84,8 @@ public class HomeDao {
     private String getCompletedCollectionBarangay() {
         String sql = "SELECT b.barangay_name FROM schedule s " +
                      "JOIN barangay b ON s.barangay_id = b.barangay_id " +
-                     "WHERE s.status = 'Completed' LIMIT 1";
+                     "JOIN status_lookup sl ON s.status_id = sl.status_id " +
+                     "WHERE sl.status_key = 'COMPLETED' LIMIT 1";
         try (Connection conn = SQLConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
@@ -96,8 +99,9 @@ public class HomeDao {
     }
     
     private int getMissedCollectionCount(LocalDate today) {
-        String sql = "SELECT COUNT(*) AS count FROM schedule " +
-                     "WHERE schedule_date < ? AND (status != 'Completed' OR status IS NULL)";
+        String sql = "SELECT COUNT(*) AS count FROM schedule s " +
+                     "JOIN status_lookup sl ON s.status_id = sl.status_id " +
+                     "WHERE s.schedule_date < ? AND sl.status_key != 'COMPLETED'";
         try (Connection conn = SQLConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setDate(1, Date.valueOf(today));
@@ -115,7 +119,8 @@ public class HomeDao {
     private String getMissedCollectionBarangay(LocalDate today) {
         String sql = "SELECT b.barangay_name FROM schedule s " +
                      "JOIN barangay b ON s.barangay_id = b.barangay_id " +
-                     "WHERE s.schedule_date < ? AND (s.status != 'Completed' OR s.status IS NULL) LIMIT 1";
+                     "JOIN status_lookup sl ON s.status_id = sl.status_id " +
+                     "WHERE s.schedule_date < ? AND sl.status_key != 'COMPLETED' LIMIT 1";
         try (Connection conn = SQLConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setDate(1, Date.valueOf(today));

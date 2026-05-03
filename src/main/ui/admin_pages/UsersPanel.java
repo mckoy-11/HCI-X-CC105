@@ -260,9 +260,89 @@ public class UsersPanel extends ReactivePanel {
     }
 
     private void toggleUserStatus(Account account) {
-     
+        String newStatus = "Active".equalsIgnoreCase(account.getStatus()) ? "Inactive" : "Active";
+        
+        int confirm = JOptionPane.showConfirmDialog(
+            this,
+            "Change status of " + account.getName() + " to " + newStatus + "?",
+            "Confirm Status Change",
+            JOptionPane.YES_NO_OPTION
+        );
+        
+        if (confirm == JOptionPane.YES_OPTION) {
+            try {
+                // Update status in database
+                account.setStatus(newStatus);
+                boolean success = accountDao.update(account);
+                
+                if (success) {
+                    JOptionPane.showMessageDialog(
+                        this,
+                        "User status updated to " + newStatus,
+                        "Success",
+                        JOptionPane.INFORMATION_MESSAGE
+                    );
+                    // Refresh UI
+                    DataChangeBus.publish(DataTopics.ACCOUNTS);
+                } else {
+                    JOptionPane.showMessageDialog(
+                        this,
+                        "Failed to update user status",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE
+                    );
+                }
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(
+                    this,
+                    "Error: " + e.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
+                );
+            }
+        }
     }
 
     private void deleteUser(Account account) {
+        // Soft delete: set status to INACTIVE instead of hard delete
+        int confirm = JOptionPane.showConfirmDialog(
+            this,
+            "Deactivate account for " + account.getName() + "?\n(User cannot log in after this)",
+            "Confirm Deactivation",
+            JOptionPane.YES_NO_OPTION
+        );
+        
+        if (confirm == JOptionPane.YES_OPTION) {
+            try {
+                // Soft delete: set status to INACTIVE
+                account.setStatus("Inactive");
+                boolean success = accountDao.update(account);
+                
+                if (success) {
+                    JOptionPane.showMessageDialog(
+                        this,
+                        "Account deactivated successfully.\nUser cannot log in anymore.",
+                        "Success",
+                        JOptionPane.INFORMATION_MESSAGE
+                    );
+                    // Refresh UI
+                    DataChangeBus.publish(DataTopics.ACCOUNTS);
+                } else {
+                    JOptionPane.showMessageDialog(
+                        this,
+                        "Failed to deactivate account",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE
+                    );
+                }
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(
+                    this,
+                    "Error: " + e.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
+                );
+            }
+        }
     }
 }
