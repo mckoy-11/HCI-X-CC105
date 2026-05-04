@@ -16,7 +16,7 @@ import java.awt.event.KeyEvent;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import static main.style.SystemStyle.*;
+import static main.ui.style.SystemStyle.*;
 
 public class LoginPanel extends JPanel {
 
@@ -26,7 +26,7 @@ public class LoginPanel extends JPanel {
 
     private AuthService authService;
 
-private final Runnable onMenro;
+    private final Runnable onMenro;
     private final Runnable onBarangay;
     private final Runnable onBack;
     private final Runnable onSignup;

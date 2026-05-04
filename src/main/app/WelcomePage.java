@@ -11,16 +11,16 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import main.ui.components.AuthLayout;
-import static main.style.SystemStyle.BGCOLOR2;
-import static main.style.SystemStyle.BODYPLAIN;
-import static main.style.SystemStyle.BODYBOLD;
-import static main.style.SystemStyle.Card;
-import static main.style.SystemStyle.createCapsuleLabel;
-import static main.style.SystemStyle.createFormSubtitle;
-import static main.style.SystemStyle.createFormTitle;
-import static main.style.SystemStyle.createPrimaryButton;
-import static main.style.SystemStyle.createSecondaryButton;
-import static main.style.SystemStyle.createTransparentPanel;
+import static main.ui.style.SystemStyle.BGCOLOR2;
+import static main.ui.style.SystemStyle.BODYPLAIN;
+import static main.ui.style.SystemStyle.BODYBOLD;
+import static main.ui.style.SystemStyle.Card;
+import static main.ui.style.SystemStyle.createCapsuleLabel;
+import static main.ui.style.SystemStyle.createFormSubtitle;
+import static main.ui.style.SystemStyle.createFormTitle;
+import static main.ui.style.SystemStyle.createPrimaryButton;
+import static main.ui.style.SystemStyle.createSecondaryButton;
+import static main.ui.style.SystemStyle.createTransparentPanel;
 
 public class WelcomePage extends JPanel {
 
@@ -86,11 +86,11 @@ public class WelcomePage extends JPanel {
 
         JLabel valueLabel = new JLabel(value);
         valueLabel.setFont(BODYBOLD.deriveFont(18f));
-        valueLabel.setForeground(main.style.SystemStyle.textDark);
+        valueLabel.setForeground(main.ui.style.SystemStyle.textDark);
 
         JLabel labelText = new JLabel(label);
         labelText.setFont(BODYPLAIN.deriveFont(12f));
-        labelText.setForeground(main.style.SystemStyle.MUTED_TEXT);
+        labelText.setForeground(main.ui.style.SystemStyle.MUTED_TEXT);
 
         panel.add(valueLabel);
         panel.add(Box.createVerticalStrut(4));

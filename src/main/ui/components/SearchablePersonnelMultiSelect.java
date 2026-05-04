@@ -12,7 +12,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import static main.style.SystemStyle.*;
+import static main.ui.style.SystemStyle.*;
 
 /**
  * SearchablePersonnelMultiSelect provides a filterable multi-select list for

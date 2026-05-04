@@ -414,7 +414,7 @@ public class AccountDao {
 
     private Integer getGenderId(String genderName) throws SQLException {
         if (genderName == null || genderName.trim().isEmpty()) return null;
-        String sql = "SELECT gender_id FROM gender_lookup WHERE gender_name = ?";
+        String sql = "SELECT gender_id FROM gender_lookup WHERE gender_label = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, genderName);
             try (ResultSet rs = ps.executeQuery()) {

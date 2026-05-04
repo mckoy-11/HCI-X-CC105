@@ -14,7 +14,7 @@ import java.awt.event.KeyEvent;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import static main.style.SystemStyle.*;
+import static main.ui.style.SystemStyle.*;
 
 public class SignupPanel extends JPanel {
 

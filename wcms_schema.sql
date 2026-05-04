@@ -307,8 +307,215 @@ ALTER TABLE team ADD CONSTRAINT fk_team_driver
     FOREIGN KEY (driver_id) REFERENCES personnel(personnel_id) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- =====================
--- DML SECTION
+-- DML USED DAO SECTION
 -- =====================
+-- ACCOUNT DAO
+SELECT a.account_id, a.name, a.email_address, a.password, s.status_label as status, r.role_key as role, a.last_login, a.is_barangay_setup_complete
+INSERT INTO account(name, email_address, password, status_id, role_id, is_barangay_setup_complete) VALUES (?, ?, ?, ?, ?, ?)
+UPDATE account SET name=?, email_address=?, password=?, status_id=?, role_id=? WHERE account_id=?
+UPDATE account SET last_login = NOW() WHERE account_id = ?
+UPDATE account SET status_id = ? WHERE account_id = ?
+DELETE FROM barangay_admin WHERE account_id = ?
+DELETE FROM account WHERE account_id = ?
+SELECT COUNT(*) FROM account WHERE email_address = ?
+SELECT barangay_admin_id FROM barangay_admin WHERE account_id = ?
+UPDATE barangay_admin SET barangay_id = ? WHERE account_id = ?
+INSERT INTO barangay_admin (barangay_id, account_id) VALUES (?, ?)
+SELECT barangay_admin_id, barangay_id FROM barangay_admin WHERE account_id = ?
+UPDATE barangay_admin SET barangay_admin = ?, age = ?, gender_id = ? WHERE account_id = ?
+INSERT INTO barangay_admin (barangay_id, account_id, barangay_admin, age, gender_id) VALUES (?, ?, ?, ?, ?)
+SELECT barangay_admin_id FROM barangay_admin WHERE account_id = ?
+UPDATE barangay_admin SET barangay_id = ? WHERE account_id = ?
+SELECT barangay_id FROM barangay WHERE UPPER(TRIM(barangay_name)) = UPPER(TRIM(?))
+ALTER TABLE account ADD COLUMN is_barangay_setup_complete BOOLEAN DEFAULT FALSE
+UPDATE account SET is_barangay_setup_complete = ? WHERE account_id = ?
+SELECT status_id FROM status_lookup WHERE status_key = ?
+SELECT role_id FROM role_lookup WHERE role_key = ?
+SELECT gender_id FROM gender_lookup WHERE gender_name = ?
+
+-- ANNOUNCEMENT DAO
+SELECT * FROM announcement WHERE is_active = 1 AND is_archived = 0 ORDER BY created_at DESC LIMIT 1
+SELECT * FROM announcement WHERE is_archived = 1 ORDER BY archived_at DESC, created_at DESC
+INSERT INTO announcement (title, message, is_active, is_archived, created_at, expires_at) VALUES (?, ?, 1, 0, CURRENT_TIMESTAMP, DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 7 DAY))
+UPDATE announcement SET is_active = 0, is_archived = 1, archived_at = CURRENT_TIMESTAMP WHERE announcement_id = ?
+INSERT INTO announcement (title, message, is_active, is_archived, created_at, expires_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
+UPDATE announcement SET title = ?, message = ?, is_active = ?, is_archived = ?, expires_at = ? WHERE announcement_id = ?
+UPDATE announcement SET is_active = 0, is_archived = 1, archived_at = CURRENT_TIMESTAMP WHERE is_active = 1 AND is_archived = 0 AND expires_at IS NOT NULL AND expires_at <= CURRENT_TIMESTAMP
+UPDATE announcement SET is_active = 0, is_archived = 1, archived_at = CURRENT_TIMESTAMP WHERE is_active = 1 AND is_archived = 0
+CREATE TABLE announcement (announcement_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, title VARCHAR(255) NULL, message TEXT NOT NULL, is_active TINYINT(1) NOT NULL DEFAULT 1, is_archived TINYINT(1) NOT NULL DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, archived_at TIMESTAMP NULL, expires_at TIMESTAMP NULL)
+
+-- ATTACHMENT DAO
+DELETE FROM entry_attachment WHERE entry_type = ? AND entry_id = ?
+INSERT INTO entry_attachment (entry_type, entry_id, image_blob) VALUES (?, ?, ?)
+SELECT attachment_id, entry_type, entry_id, image_blob FROM entry_attachment WHERE entry_type = ? AND entry_id = ? ORDER BY attachment_id ASC
+CREATE TABLE entry_attachment (attachment_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, entry_type VARCHAR(30) NOT NULL, entry_id INT NOT NULL, image_blob LONGBLOB NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)
+
+-- BARANGAY DAO
+INSERT INTO barangay(barangay_name, barangay_household, purok_count, population, contact, collection_day, status_id) VALUES (?, ?, ?, ?, ?, ?, ?)
+UPDATE barangay SET barangay_name = ?, barangay_household = ?, purok_count = ?, population = ?, contact = ?, collection_day = ?, status_id = ? WHERE barangay_id = ?
+DELETE FROM barangay WHERE barangay_id = ?
+SELECT b.*, sl.status_label as status FROM barangay b LEFT JOIN status_lookup sl ON b.status_id = sl.status_id WHERE b.barangay_id = ?
+SELECT b.*, sl.status_label as status FROM barangay b LEFT JOIN status_lookup sl ON b.status_id = sl.status_id ORDER BY b.barangay_name
+SELECT b.*, sl.status_label as status FROM barangay b LEFT JOIN status_lookup sl ON b.status_id = sl.status_id WHERE UPPER(TRIM(b.barangay_name)) = UPPER(TRIM(?))
+SELECT b.*, sl.status_label as status FROM barangay b LEFT JOIN status_lookup sl ON b.status_id = sl.status_id WHERE b.collection_day = ? ORDER BY b.barangay_name
+SELECT COUNT(*) FROM barangay b JOIN status_lookup sl ON b.status_id = sl.status_id WHERE sl.status_key = 'SCHEDULED'
+SELECT COUNT(*) FROM barangay
+SELECT COALESCE(SUM(barangay_household), 0) FROM barangay
+SELECT COALESCE(SUM(population), 0) FROM barangay
+ALTER TABLE barangay ADD COLUMN purok_count INT DEFAULT 0
+ALTER TABLE barangay ADD COLUMN population INT DEFAULT 0
+SELECT status_id FROM status_lookup WHERE status_key = ? AND status_domain_id = 2
+
+-- COMPLAINT
+INSERT INTO complaint (barangay_id, complaint_type_id, message, proof, status_id, is_read, is_archived, location, response_message) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)
+UPDATE complaint SET barangay_id = ?, complaint_type_id = ?, message = ?, proof = ?, status_id = ?, is_read = ?, is_archived = ?, archived_at = ?, location = ?, response_message = ? WHERE complaint_id = ?
+DELETE FROM complaint WHERE complaint_id = ?
+SELECT c.*, ct.complaint_type_name as type, s.status_name as status, b.barangay_name FROM complaint c LEFT JOIN complaint_type ct ON c.complaint_type_id = ct.complaint_type_id LEFT JOIN status_lookup s ON c.status_id = s.status_id LEFT JOIN barangay b ON c.barangay_id = b.barangay_id WHERE c.complaint_id = ?
+SELECT c.*, ct.complaint_type_name as type, s.status_name as status, b.barangay_name FROM complaint c LEFT JOIN complaint_type ct ON c.complaint_type_id = ct.complaint_type_id LEFT JOIN status_lookup s ON c.status_id = s.status_id LEFT JOIN barangay b ON c.barangay_id = b.barangay_id WHERE c.is_archived = 0 ORDER BY c.created_at DESC
+SELECT c.*, ct.complaint_type_name as type, s.status_name as status, b.barangay_name FROM complaint c LEFT JOIN complaint_type ct ON c.complaint_type_id = ct.complaint_type_id LEFT JOIN status_lookup s ON c.status_id = s.status_id LEFT JOIN barangay b ON c.barangay_id = b.barangay_id WHERE c.is_archived = 1 ORDER BY c.created_at DESC
+SELECT c.*, ct.complaint_type_name as type, s.status_name as status, b.barangay_name FROM complaint c LEFT JOIN complaint_type ct ON c.complaint_type_id = ct.complaint_type_id LEFT JOIN status_lookup s ON c.status_id = s.status_id LEFT JOIN barangay b ON c.barangay_id = b.barangay_id WHERE c.is_archived = 0 AND s.status_name = ? ORDER BY c.complaint_id DESC
+SELECT * FROM complaint WHERE is_archived = 0 AND (is_read = FALSE OR is_read IS NULL) ORDER BY complaint_id DESC
+UPDATE complaint SET is_read = TRUE WHERE complaint_id = ?
+UPDATE complaint SET status_id = ? WHERE complaint_id = ?
+SELECT COUNT(*) FROM complaint WHERE is_archived = 0
+SELECT COUNT(*) FROM complaint WHERE is_archived = 1
+SELECT COUNT(*) FROM complaint c LEFT JOIN status_lookup s ON c.status_id = s.status_id WHERE c.is_archived = 0 AND s.status_name = ?
+SELECT COUNT(*) FROM complaint WHERE is_archived = 0 AND (is_read = FALSE OR is_read IS NULL)
+UPDATE complaint SET is_archived = 1, archived_at = CURRENT_TIMESTAMP WHERE is_archived = 0 AND created_at <= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 7 DAY)
+SELECT complaint_type_id FROM complaint_type WHERE complaint_type_name = ?
+SELECT status_id FROM status_lookup WHERE status_name = ?
+
+-- HOME DAO
+SELECT COUNT(*) AS count FROM schedule WHERE schedule_date = ?
+SELECT b.barangay_name FROM schedule s JOIN barangay b ON s.barangay_id = b.barangay_id WHERE s.schedule_date = ? LIMIT 1
+SELECT COUNT(*) AS count FROM schedule s JOIN status_lookup sl ON s.status_id = sl.status_id WHERE sl.status_key = 'COMPLETED'
+SELECT b.barangay_name FROM schedule s JOIN barangay b ON s.barangay_id = b.barangay_id JOIN status_lookup sl ON s.status_id = sl.status_id WHERE sl.status_key = 'COMPLETED' LIMIT 1
+SELECT COUNT(*) AS count FROM schedule s JOIN status_lookup sl ON s.status_id = sl.status_id WHERE s.schedule_date < ? AND sl.status_key != 'COMPLETED'
+SELECT b.barangay_name FROM schedule s JOIN barangay b ON s.barangay_id = b.barangay_id JOIN status_lookup sl ON s.status_id = sl.status_id WHERE s.schedule_date < ? AND sl.status_key != 'COMPLETED' LIMIT 1
+SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'wcms' AND table_name = 'complaint'
+SELECT COUNT(*) AS count FROM complaint WHERE is_read = 0 OR is_read IS NULL
+
+-- NOTIFICATION DAO
+SELECT COUNT(*) FROM barangay
+SELECT COUNT(*) FROM schedule
+SELECT COUNT(*) FROM report
+
+-- PERSONNEL DAO
+SELECT p.*, gl.gender_label AS gender, rl.role_label AS role, sl.status_label AS status FROM personnel p LEFT JOIN gender_lookup gl ON p.gender_id = gl.gender_id LEFT JOIN role_lookup rl ON p.role_id = rl.role_id LEFT JOIN status_lookup sl ON p.status_id = sl.status_id ORDER BY p.personnel_name ASC
+SELECT p.*, gl.gender_label AS gender, rl.role_label AS role, sl.status_label AS status FROM personnel p LEFT JOIN gender_lookup gl ON p.gender_id = gl.gender_id LEFT JOIN role_lookup rl ON p.role_id = rl.role_id LEFT JOIN status_lookup sl ON p.status_id = sl.status_id WHERE (p.team_name IS NULL OR TRIM(p.team_name) = '') ORDER BY p.personnel_name ASC
+SELECT p.*, gl.gender_label AS gender, rl.role_label AS role, sl.status_label AS status FROM personnel p LEFT JOIN gender_lookup gl ON p.gender_id = gl.gender_id LEFT JOIN role_lookup rl ON p.role_id = rl.role_id LEFT JOIN status_lookup sl ON p.status_id = sl.status_id WHERE p.personnel_id = ?
+SELECT p.*, gl.gender_label AS gender, rl.role_label AS role, sl.status_label AS status FROM personnel p LEFT JOIN gender_lookup gl ON p.gender_id = gl.gender_id LEFT JOIN role_lookup rl ON p.role_id = rl.role_id LEFT JOIN status_lookup sl ON p.status_id = sl.status_id WHERE rl.role_label = ? OR rl.role_key = UPPER(?) ORDER BY p.personnel_name ASC
+INSERT INTO personnel (personnel_name, age, gender_id, address, contact_number, team_id, role_id, status_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+UPDATE personnel SET personnel_name = ?, age = ?, gender_id = ?, address = ?, contact_number = ?, team_id = ?, role_id = ?, status_id = ? WHERE personnel_id = ?
+DELETE FROM personnel WHERE personnel_id = ?
+UPDATE personnel SET status_id = ? WHERE personnel_id = ?
+SELECT COUNT(*) AS count FROM personnel
+SELECT COUNT(*) AS count FROM personnel p JOIN status_lookup sl ON p.status_id = sl.status_id WHERE sl.status_key = 'ACTIVE'
+SELECT COUNT(*) AS count FROM personnel p JOIN status_lookup sl ON p.status_id = sl.status_id WHERE sl.status_key = 'UNASSIGNED'
+SELECT status_id FROM status_lookup WHERE status_key = ? AND status_domain_id = 10
+SELECT role_id FROM role_lookup WHERE role_key = ?
+SELECT gender_id FROM gender_lookup WHERE gender_key = ?
+
+-- PUROK CHECKLIST DAO
+SELECT checklist_id, barangay_id, purok_name, is_collected, updated_at FROM purok_checklist WHERE barangay_id = ? ORDER BY checklist_id ASC
+UPDATE purok_checklist SET is_collected = ?, updated_at = CURRENT_TIMESTAMP WHERE checklist_id = ?
+SELECT COUNT(*) FROM purok_checklist WHERE barangay_id = ?
+INSERT INTO purok_checklist (barangay_id, purok_name, is_collected) VALUES (?, ?, 0)
+CREATE TABLE purok_checklist (checklist_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, barangay_id INT NOT NULL, purok_name VARCHAR(100) NOT NULL, is_collected TINYINT(1) NOT NULL DEFAULT 0, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP)
+
+-- REPORT DAO
+INSERT INTO report (message, proof, status_id, is_read, barangay_id, report_type_id, response_message, purok_analytics, is_archived) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
+UPDATE report SET message = ?, proof = ?, status_id = ?, is_read = ?, barangay_id = ?, report_type_id = ?, response_message = ?, purok_analytics = ?, is_archived = ?, archived_at = ? WHERE report_id = ?
+DELETE FROM report WHERE report_id = ?
+SELECT r.*, rt.report_type_name as type, s.status_name as status, b.barangay_name FROM report r LEFT JOIN report_type rt ON r.report_type_id = rt.report_type_id LEFT JOIN status_lookup s ON r.status_id = s.status_id LEFT JOIN barangay b ON r.barangay_id = b.barangay_id WHERE r.report_id = ?
+SELECT r.*, rt.report_type_name as type, s.status_name as status, b.barangay_name FROM report r LEFT JOIN report_type rt ON r.report_type_id = rt.report_type_id LEFT JOIN status_lookup s ON r.status_id = s.status_id LEFT JOIN barangay b ON r.barangay_id = b.barangay_id WHERE r.is_archived = 0 ORDER BY r.created_at DESC
+SELECT r.*, rt.report_type_name as type, s.status_name as status, b.barangay_name FROM report r LEFT JOIN report_type rt ON r.report_type_id = rt.report_type_id LEFT JOIN status_lookup s ON r.status_id = s.status_id LEFT JOIN barangay b ON r.barangay_id = b.barangay_id WHERE r.is_archived = 1 ORDER BY CASE WHEN r.archived_at IS NULL THEN 0 ELSE 1 END DESC, r.created_at DESC
+SELECT r.*, rt.report_type_name as type, s.status_name as status, b.barangay_name FROM report r LEFT JOIN report_type rt ON r.report_type_id = rt.report_type_id LEFT JOIN status_lookup s ON r.status_id = s.status_id LEFT JOIN barangay b ON r.barangay_id = b.barangay_id WHERE r.is_archived = 0 AND s.status_name = ? ORDER BY r.report_id DESC
+SELECT r.*, rt.report_type_name as type, s.status_name as status, b.barangay_name FROM report r LEFT JOIN report_type rt ON r.report_type_id = rt.report_type_id LEFT JOIN status_lookup s ON r.status_id = s.status_id LEFT JOIN barangay b ON r.barangay_id = b.barangay_id WHERE r.is_archived = 0 AND (r.is_read = FALSE OR r.is_read IS NULL) ORDER BY r.report_id DESC
+UPDATE report SET is_read = TRUE WHERE report_id = ?
+UPDATE report SET status_id = ? WHERE report_id = ?
+SELECT COUNT(*) FROM report WHERE is_archived = 0
+SELECT COUNT(*) FROM report WHERE is_archived = 1
+SELECT COUNT(*) FROM report r LEFT JOIN status_lookup s ON r.status_id = s.status_id WHERE r.is_archived = 0 AND s.status_name = ?
+SELECT COUNT(*) FROM report WHERE is_archived = 0 AND (is_read = FALSE OR is_read IS NULL)
+UPDATE report SET is_archived = 1, archived_at = CURRENT_TIMESTAMP WHERE is_archived = 0 AND created_at <= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 7 DAY)
+SELECT report_type_id FROM report_type WHERE report_type_name = ?
+SELECT status_id FROM status_lookup WHERE status_name = ?
+
+-- REQUEST DAO
+INSERT INTO request (barangay_id, request_type_id, message, proof, status_id, is_read, is_archived, location, response_message) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)
+UPDATE request SET barangay_id = ?, request_type_id = ?, message = ?, proof = ?, status_id = ?, is_read = ?, is_archived = ?, archived_at = ?, location = ?, response_message = ? WHERE request_id = ?
+DELETE FROM request WHERE request_id = ?
+SELECT r.*, rt.request_type_name as type, s.status_name as status, b.barangay_name FROM request r LEFT JOIN request_type rt ON r.request_type_id = rt.request_type_id LEFT JOIN status_lookup s ON r.status_id = s.status_id LEFT JOIN barangay b ON r.barangay_id = b.barangay_id WHERE r.request_id = ?
+SELECT r.*, rt.request_type_name as type, s.status_name as status, b.barangay_name FROM request r LEFT JOIN request_type rt ON r.request_type_id = rt.request_type_id LEFT JOIN status_lookup s ON r.status_id = s.status_id LEFT JOIN barangay b ON r.barangay_id = b.barangay_id WHERE r.is_archived = 0 ORDER BY r.created_at DESC
+SELECT r.*, rt.request_type_name as type, s.status_name as status, b.barangay_name FROM request r LEFT JOIN request_type rt ON r.request_type_id = rt.request_type_id LEFT JOIN status_lookup s ON r.status_id = s.status_id LEFT JOIN barangay b ON r.barangay_id = b.barangay_id WHERE r.is_archived = 1 ORDER BY r.created_at DESC
+SELECT r.*, rt.request_type_name as type, s.status_name as status, b.barangay_name FROM request r LEFT JOIN request_type rt ON r.request_type_id = rt.request_type_id LEFT JOIN status_lookup s ON r.status_id = s.status_id LEFT JOIN barangay b ON r.barangay_id = b.barangay_id WHERE r.is_archived = 0 AND s.status_name = ? ORDER BY r.request_id DESC
+SELECT * FROM request WHERE is_archived = 0 AND (is_read = FALSE OR is_read IS NULL) ORDER BY request_id DESC
+UPDATE request SET is_read = TRUE WHERE request_id = ?
+UPDATE request SET status_id = ? WHERE request_id = ?
+SELECT COUNT(*) FROM request WHERE is_archived = 0
+SELECT COUNT(*) FROM request WHERE is_archived = 1
+SELECT COUNT(*) FROM request r LEFT JOIN status_lookup s ON r.status_id = s.status_id WHERE r.is_archived = 0 AND s.status_name = ?
+SELECT COUNT(*) FROM request WHERE is_archived = 0 AND (is_read = FALSE OR is_read IS NULL)
+UPDATE request SET is_archived = 1, archived_at = CURRENT_TIMESTAMP WHERE is_archived = 0 AND created_at <= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 7 DAY)
+SELECT request_type_id FROM request_type WHERE request_type_name = ?
+SELECT status_id FROM status_lookup WHERE status_name = ?
+
+-- SCHEDULE DAO
+SELECT s.schedule_id, s.barangay_id, s.team_id, s.schedule_date, s.schedule_time, sl.status_label as status, b.barangay_name, b.contact, ba.admin_name as barangay_admin, t.team_name, tr.plate_number AS truck_plate_number, ttl.truck_type_label as truck_type FROM schedule s LEFT JOIN status_lookup sl ON s.status_id = sl.status_id LEFT JOIN barangay b ON s.barangay_id = b.barangay_id LEFT JOIN barangay_admin ba ON b.barangay_id = ba.barangay_id LEFT JOIN team t ON s.team_id = t.team_id LEFT JOIN truck tr ON t.truck_id = tr.truck_id LEFT JOIN truck_type_lookup ttl ON tr.truck_type_id = ttl.truck_type_id ORDER BY s.schedule_date ASC, s.schedule_time ASC, b.barangay_name ASC
+UPDATE schedule SET team_id = ?, schedule_date = ?, schedule_time = ?, status = ? WHERE schedule_id = ?
+INSERT INTO schedule (barangay_id, team_id, schedule_date, schedule_time, status) VALUES (?, ?, ?, ?, ?)
+DELETE FROM schedule WHERE schedule_id = ?
+SELECT t.team_name, tr.plate_number AS truck_plate_number, ttl.truck_type_label as truck_type, s.schedule_time, sl.status_label as status FROM schedule s LEFT JOIN status_lookup sl ON s.status_id = sl.status_id LEFT JOIN barangay b ON s.barangay_id = b.barangay_id LEFT JOIN team t ON s.team_id = t.team_id LEFT JOIN truck tr ON t.truck_id = tr.truck_id LEFT JOIN truck_type_lookup ttl ON tr.truck_type_id = ttl.truck_type_id WHERE UPPER(TRIM(b.barangay_name)) = UPPER(TRIM(?)) ORDER BY s.schedule_date ASC, s.schedule_time ASC LIMIT 1
+SELECT barangay_id FROM barangay WHERE UPPER(TRIM(barangay_name)) = UPPER(TRIM(?))
+SELECT team_id FROM team WHERE UPPER(TRIM(team_name)) = UPPER(TRIM(?))
+SELECT schedule_id FROM schedule WHERE barangay_id = ?
+SELECT status_id FROM status_lookup WHERE status_key = ? AND status_domain_id = 8
+
+-- TEAM DAO
+SELECT t.*, sl.status_label as status, p.personnel_name AS leader_name, d.personnel_name AS driver_name, tr.plate_number AS truck_plate_number FROM team t LEFT JOIN status_lookup sl ON t.status_id = sl.status_id LEFT JOIN personnel p ON t.leader_id = p.personnel_id LEFT JOIN personnel d ON t.driver_id = d.personnel_id LEFT JOIN truck tr ON t.truck_id = tr.truck_id ORDER BY t.team_name ASC
+SELECT t.*, sl.status_label as status, p.personnel_name AS leader_name FROM team t LEFT JOIN status_lookup sl ON t.status_id = sl.status_id LEFT JOIN personnel p ON t.leader_id = p.personnel_id ORDER BY t.team_name ASC
+SELECT t.*, sl.status_label as status, p.personnel_name AS leader_name, d.personnel_name AS driver_name FROM team t LEFT JOIN status_lookup sl ON t.status_id = sl.status_id LEFT JOIN personnel p ON t.leader_id = p.personnel_id LEFT JOIN personnel d ON t.driver_id = d.personnel_id ORDER BY t.team_name ASC
+SELECT t.*, sl.status_label as status, p.personnel_name AS leader_name, tr.plate_number AS truck_plate_number FROM team t LEFT JOIN status_lookup sl ON t.status_id = sl.status_id LEFT JOIN personnel p ON t.leader_id = p.personnel_id LEFT JOIN truck tr ON t.truck_id = tr.truck_id ORDER BY t.team_name ASC
+SELECT t.*, sl.status_label as status, p.personnel_name AS leader_name, d.personnel_name AS driver_name, tr.plate_number AS truck_plate_number FROM team t LEFT JOIN status_lookup sl ON t.status_id = sl.status_id LEFT JOIN personnel p ON t.leader_id = p.personnel_id LEFT JOIN personnel d ON t.driver_id = d.personnel_id LEFT JOIN truck tr ON t.truck_id = tr.truck_id WHERE t.team_id = ?
+SELECT t.*, sl.status_label as status, p.personnel_name AS leader_name FROM team t LEFT JOIN status_lookup sl ON t.status_id = sl.status_id LEFT JOIN personnel p ON t.leader_id = p.personnel_id WHERE t.team_id = ?
+SELECT t.*, sl.status_label as status, p.personnel_name AS leader_name, d.personnel_name AS driver_name FROM team t LEFT JOIN status_lookup sl ON t.status_id = sl.status_id LEFT JOIN personnel p ON t.leader_id = p.personnel_id LEFT JOIN personnel d ON t.driver_id = d.personnel_id WHERE t.team_id = ?
+SELECT t.*, sl.status_label as status, p.personnel_name AS leader_name, tr.plate_number AS truck_plate_number FROM team t LEFT JOIN status_lookup sl ON t.status_id = sl.status_id LEFT JOIN personnel p ON t.leader_id = p.personnel_id LEFT JOIN truck tr ON t.truck_id = tr.truck_id WHERE t.team_id = ?
+INSERT INTO team (team_name, leader_id, driver_id, truck_id, status_id) VALUES (?, ?, ?, ?, ?)
+INSERT INTO team (team_name, leader_id, status_id) VALUES (?, ?, ?)
+UPDATE team SET team_name = ?, leader_id = ?, driver_id = ?, truck_id = ?, status_id = ? WHERE team_id = ?
+UPDATE team SET team_name = ?, leader_id = ?, status_id = ? WHERE team_id = ?
+DELETE FROM team WHERE team_id = ?
+SELECT COUNT(*) AS count FROM team
+SELECT COUNT(*) AS count FROM team t JOIN status_lookup sl ON t.status_id = sl.status_id WHERE sl.status_key = 'ACTIVE'
+SELECT personnel_id, personnel_name FROM personnel WHERE UPPER(TRIM(team_name)) = UPPER(TRIM(?)) AND UPPER(TRIM(role)) = 'DRIVER' ORDER BY personnel_name ASC LIMIT 1
+SELECT tc.personnel_id, p.personnel_name FROM team_collectors tc LEFT JOIN personnel p ON tc.personnel_id = p.personnel_id WHERE tc.team_id = ? ORDER BY p.personnel_name ASC
+SELECT personnel_id, personnel_name FROM personnel WHERE UPPER(TRIM(team_name)) = UPPER(TRIM(?)) AND UPPER(TRIM(role)) = 'COLLECTOR' ORDER BY personnel_name ASC
+DELETE FROM team_collectors WHERE team_id = ?
+INSERT INTO team_collectors (team_id, personnel_id) VALUES (?, ?)
+UPDATE personnel SET team_name = NULL WHERE UPPER(TRIM(team_name)) = UPPER(TRIM(?))
+UPDATE personnel SET team_name = ? WHERE personnel_id = ?
+SELECT COUNT(*) AS count FROM team
+ALTER TABLE team ADD COLUMN driver_id INT NULL
+ALTER TABLE team ADD COLUMN truck_id INT NULL
+ALTER TABLE personnel ADD COLUMN team_name VARCHAR(255)
+CREATE TABLE team_collectors (team_id INT NOT NULL, personnel_id INT NOT NULL, PRIMARY KEY (team_id, personnel_id))
+
+-- TRUCK DAO
+SELECT t.*, sl.status_label as status, ttl.truck_type_label as truck_type FROM truck t LEFT JOIN status_lookup sl ON t.status_id = sl.status_id LEFT JOIN truck_type_lookup ttl ON t.truck_type_id = ttl.truck_type_id ORDER BY t.plate_number ASC
+SELECT t.*, sl.status_label as status, ttl.truck_type_label as truck_type FROM truck t LEFT JOIN status_lookup sl ON t.status_id = sl.status_id LEFT JOIN truck_type_lookup ttl ON t.truck_type_id = ttl.truck_type_id WHERE t.truck_id = ?
+INSERT INTO truck (plate_number, truck_type, status) VALUES (?, ?, ?)
+INSERT INTO truck (plate_number, truck_type, status, capacity, assigned_barangay) VALUES (?, ?, ?, ?, ?)
+UPDATE truck SET plate_number = ?, truck_type = ?, status = ? WHERE truck_id = ?
+UPDATE truck SET plate_number = ?, truck_type = ?, status = ?, capacity = ?, assigned_barangay = ? WHERE truck_id = ?
+DELETE FROM truck WHERE truck_id = ?
+SELECT COUNT(*) as count FROM truck
+SELECT COUNT(*) AS count FROM truck t JOIN status_lookup sl ON t.status_id = sl.status_id WHERE sl.status_key = 'ACTIVE'
+SELECT t.*, sl.status_label as status, ttl.truck_type_label as truck_type FROM truck t LEFT JOIN status_lookup sl ON t.status_id = sl.status_id LEFT JOIN truck_type_lookup ttl ON t.truck_type_id = ttl.truck_type_id WHERE sl.status_key = 'UNASSIGNED' ORDER BY t.plate_number ASC
+
+-- =======================
+-- DML SAMPLE DATA SECTION
+-- =======================
 
 -- Roles
 INSERT INTO role_lookup (role_id, role_key, role_label) VALUES

@@ -22,10 +22,10 @@ import main.database.SQLConnection;
 import main.model.UserSession;
 import main.service.AuthService;
 import main.service.HeaderService;
-import static main.style.SystemStyle.PlainBtn;
-import static main.style.SystemStyle.TEXTCOLOR;
-import static main.style.SystemStyle.WHITE;
-import main.ui.dialogs.SearchDialog;
+import static main.ui.style.SystemStyle.PlainBtn;
+import static main.ui.style.SystemStyle.TEXTCOLOR;
+import static main.ui.style.SystemStyle.WHITE;
+import main.ui.menro.dialogs.SearchDialog;
 
 public class Header extends JPanel {
 

@@ -1,6 +1,6 @@
 package main.ui.components;
 
-import main.ui.dialogs.SearchDialog;
+import main.ui.menro.dialogs.SearchDialog;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -8,7 +8,7 @@ import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
-import static main.style.SystemStyle.loadIcon;
+import static main.ui.style.SystemStyle.loadIcon;
 
 public final class SearchBar extends JPanel {
 

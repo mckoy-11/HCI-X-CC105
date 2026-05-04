@@ -65,7 +65,7 @@ public class RequestDao {
 
     public Request findById(int id) throws SQLException {
         archiveExpired();
-        String sql = "SELECT r.*, rt.request_type_name as type, s.status_name as status, b.barangay_name " +
+        String sql = "SELECT r.*, rt.type_label as type, s.status_label as status, b.barangay_name " +
                      "FROM " + TABLE_NAME + " r " +
                      "LEFT JOIN request_type rt ON r.request_type_id = rt.request_type_id " +
                      "LEFT JOIN status_lookup s ON r.status_id = s.status_id " +
@@ -91,12 +91,12 @@ public class RequestDao {
     public List<Request> findByStatus(String status) throws SQLException {
         archiveExpired();
         List<Request> results = new ArrayList<Request>();
-        String sql = "SELECT r.*, rt.request_type_name as type, s.status_name as status, b.barangay_name " +
+        String sql = "SELECT r.*, rt.type_label as type, s.status_label as status, b.barangay_name " +
                      "FROM " + TABLE_NAME + " r " +
                      "LEFT JOIN request_type rt ON r.request_type_id = rt.request_type_id " +
                      "LEFT JOIN status_lookup s ON r.status_id = s.status_id " +
                      "LEFT JOIN barangay b ON r.barangay_id = b.barangay_id " +
-                     "WHERE r.is_archived = 0 AND s.status_name = ? ORDER BY r.request_id DESC";
+                     "WHERE r.is_archived = 0 AND s.status_label = ? ORDER BY r.request_id DESC";
         try (Connection conn = SQLConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, status);
@@ -155,7 +155,7 @@ public class RequestDao {
              PreparedStatement ps = conn.prepareStatement(
                      "SELECT COUNT(*) FROM " + TABLE_NAME + " r " +
                      "LEFT JOIN status_lookup s ON r.status_id = s.status_id " +
-                     "WHERE r.is_archived = 0 AND s.status_name = ?")) {
+                     "WHERE r.is_archived = 0 AND s.status_label = ?")) {
             ps.setString(1, status);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? rs.getInt(1) : 0;
@@ -182,7 +182,7 @@ public class RequestDao {
     private List<Request> findByArchive(boolean archived) throws SQLException {
         archiveExpired();
         List<Request> results = new ArrayList<Request>();
-        String sql = "SELECT r.*, rt.request_type_name as type, s.status_name as status, b.barangay_name " +
+        String sql = "SELECT r.*, rt.type_label as type, s.status_label as status, b.barangay_name " +
                      "FROM " + TABLE_NAME + " r " +
                      "LEFT JOIN request_type rt ON r.request_type_id = rt.request_type_id " +
                      "LEFT JOIN status_lookup s ON r.status_id = s.status_id " +
@@ -274,7 +274,7 @@ public class RequestDao {
     private Integer getStatusId(String statusName) throws SQLException {
         if (statusName == null || statusName.trim().isEmpty()) return 7; // Default to "Under Review"
         try (Connection conn = SQLConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement("SELECT status_id FROM status_lookup WHERE status_name = ?")) {
+             PreparedStatement ps = conn.prepareStatement("SELECT status_id FROM status_lookup WHERE status_label = ?")) {
             ps.setString(1, statusName);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? rs.getInt("status_id") : 7;
@@ -285,7 +285,7 @@ public class RequestDao {
     private Integer getRequestTypeId(String typeName) throws SQLException {
         if (typeName == null || typeName.trim().isEmpty()) return 1; // Default to first type
         try (Connection conn = SQLConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement("SELECT request_type_id FROM request_type WHERE request_type_name = ?")) {
+             PreparedStatement ps = conn.prepareStatement("SELECT request_type_id FROM request_type WHERE type_label = ?")) {
             ps.setString(1, typeName);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? rs.getInt("request_type_id") : 1;

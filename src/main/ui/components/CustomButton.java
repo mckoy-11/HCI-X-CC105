@@ -5,7 +5,7 @@ import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.*;
-import static main.style.SystemStyle.*;
+import static main.ui.style.SystemStyle.*;
 
 public final class CustomButton extends JButton {
 

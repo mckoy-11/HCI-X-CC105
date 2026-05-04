@@ -3,13 +3,13 @@ package main.ui.components;
 import java.awt.*;
 import java.awt.event.*;
 
-import static main.style.SystemStyle.*;
+import static main.ui.style.SystemStyle.*;
 
 import javax.swing.*;
 import main.app.MainFrame;
 import main.app.WelcomePage;
 import main.model.UserSession;
-import main.style.SystemStyle.RoundedPanel;
+import main.ui.style.SystemStyle.RoundedPanel;
 
 import main.app.AppRouter;
 

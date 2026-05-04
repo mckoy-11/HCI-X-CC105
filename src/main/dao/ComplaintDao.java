@@ -65,7 +65,7 @@ public class ComplaintDao {
 
     public Complaint findById(int id) throws SQLException {
         archiveExpired();
-        String sql = "SELECT c.*, ct.complaint_type_name as type, s.status_name as status, b.barangay_name " +
+        String sql = "SELECT c.*, ct.type_label as type, s.status_label as status, b.barangay_name " +
                      "FROM " + TABLE_NAME + " c " +
                      "LEFT JOIN complaint_type ct ON c.complaint_type_id = ct.complaint_type_id " +
                      "LEFT JOIN status_lookup s ON c.status_id = s.status_id " +
@@ -91,12 +91,12 @@ public class ComplaintDao {
     public List<Complaint> findByStatus(String status) throws SQLException {
         archiveExpired();
         List<Complaint> results = new ArrayList<Complaint>();
-        String sql = "SELECT c.*, ct.complaint_type_name as type, s.status_name as status, b.barangay_name " +
+        String sql = "SELECT c.*, ct.type_label as type, s.status_label as status, b.barangay_name " +
                      "FROM " + TABLE_NAME + " c " +
                      "LEFT JOIN complaint_type ct ON c.complaint_type_id = ct.complaint_type_id " +
                      "LEFT JOIN status_lookup s ON c.status_id = s.status_id " +
                      "LEFT JOIN barangay b ON c.barangay_id = b.barangay_id " +
-                     "WHERE c.is_archived = 0 AND s.status_name = ? ORDER BY c.complaint_id DESC";
+                     "WHERE c.is_archived = 0 AND s.status_label = ? ORDER BY c.complaint_id DESC";
         try (Connection conn = SQLConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, status);
@@ -155,7 +155,7 @@ public class ComplaintDao {
              PreparedStatement ps = conn.prepareStatement(
                      "SELECT COUNT(*) FROM " + TABLE_NAME + " c " +
                      "LEFT JOIN status_lookup s ON c.status_id = s.status_id " +
-                     "WHERE c.is_archived = 0 AND s.status_name = ?")) {
+                     "WHERE c.is_archived = 0 AND s.status_label = ?")) {
             ps.setString(1, status);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? rs.getInt(1) : 0;
@@ -182,7 +182,7 @@ public class ComplaintDao {
     private List<Complaint> findByArchive(boolean archived) throws SQLException {
         archiveExpired();
         List<Complaint> results = new ArrayList<Complaint>();
-        String sql = "SELECT c.*, ct.complaint_type_name as type, s.status_name as status, b.barangay_name " +
+        String sql = "SELECT c.*, ct.type_label as type, s.status_label as status, b.barangay_name " +
                      "FROM " + TABLE_NAME + " c " +
                      "LEFT JOIN complaint_type ct ON c.complaint_type_id = ct.complaint_type_id " +
                      "LEFT JOIN status_lookup s ON c.status_id = s.status_id " +
@@ -274,7 +274,7 @@ public class ComplaintDao {
     private Integer getStatusId(String statusName) throws SQLException {
         if (statusName == null || statusName.trim().isEmpty()) return 7; // Default to "Under Review"
         try (Connection conn = SQLConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement("SELECT status_id FROM status_lookup WHERE status_name = ?")) {
+             PreparedStatement ps = conn.prepareStatement("SELECT status_id FROM status_lookup WHERE status_label = ?")) {
             ps.setString(1, statusName);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? rs.getInt("status_id") : 7;
@@ -285,7 +285,7 @@ public class ComplaintDao {
     private Integer getComplaintTypeId(String typeName) throws SQLException {
         if (typeName == null || typeName.trim().isEmpty()) return 1; // Default to first type
         try (Connection conn = SQLConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement("SELECT complaint_type_id FROM complaint_type WHERE complaint_type_name = ?")) {
+             PreparedStatement ps = conn.prepareStatement("SELECT complaint_type_id FROM complaint_type WHERE type_label = ?")) {
             ps.setString(1, typeName);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? rs.getInt("complaint_type_id") : 1;

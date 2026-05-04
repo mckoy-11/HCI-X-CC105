@@ -88,7 +88,7 @@ public class ReportDao {
         ensureSchema();
         archiveExpired();
         List<Report> results = new ArrayList<Report>();
-        String sql = baseQuery() + " WHERE r.is_archived = 0 AND s.status_name = ? ORDER BY r.report_id DESC";
+        String sql = baseQuery() + " WHERE r.is_archived = 0 AND s.status_label = ? ORDER BY r.report_id DESC";
         try (Connection conn = SQLConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, status);
@@ -151,7 +151,7 @@ public class ReportDao {
              PreparedStatement ps = conn.prepareStatement(
                      "SELECT COUNT(*) FROM " + TABLE_NAME + " r " +
                      "LEFT JOIN status_lookup s ON r.status_id = s.status_id " +
-                     "WHERE r.is_archived = 0 AND s.status_name = ?")) {
+                     "WHERE r.is_archived = 0 AND s.status_label = ?")) {
             ps.setString(1, status);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? rs.getInt(1) : 0;
@@ -202,7 +202,7 @@ public class ReportDao {
     }
 
     private String baseQuery() {
-        return "SELECT r.*, rt.report_type_name as type, s.status_name as status, b.barangay_name FROM " + TABLE_NAME + " r"
+        return "SELECT r.*, rt.type_label as type, s.status_label as status, b.barangay_name FROM " + TABLE_NAME + " r"
                 + " LEFT JOIN report_type rt ON r.report_type_id = rt.report_type_id"
                 + " LEFT JOIN status_lookup s ON r.status_id = s.status_id"
                 + " LEFT JOIN barangay b ON r.barangay_id = b.barangay_id";
@@ -271,7 +271,7 @@ public class ReportDao {
     private Integer getStatusId(String statusName) throws SQLException {
         if (statusName == null || statusName.trim().isEmpty()) return 11;
         try (Connection conn = SQLConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement("SELECT status_id FROM status_lookup WHERE status_name = ?")) {
+             PreparedStatement ps = conn.prepareStatement("SELECT status_id FROM status_lookup WHERE status_label = ?")) {
             ps.setString(1, statusName);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? rs.getInt("status_id") : 11;
@@ -282,7 +282,7 @@ public class ReportDao {
     private Integer getReportTypeId(String typeName) throws SQLException {
         if (typeName == null || typeName.trim().isEmpty()) return 1;
         try (Connection conn = SQLConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement("SELECT report_type_id FROM report_type WHERE report_type_name = ?")) {
+             PreparedStatement ps = conn.prepareStatement("SELECT report_type_id FROM report_type WHERE type_label = ?")) {
             ps.setString(1, typeName);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? rs.getInt("report_type_id") : 1;

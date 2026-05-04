@@ -4,7 +4,7 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.geom.RoundRectangle2D;
-import static main.style.SystemStyle.*;
+import static main.ui.style.SystemStyle.*;
 
 public class SummaryCards extends JPanel {
 

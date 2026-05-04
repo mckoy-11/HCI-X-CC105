@@ -16,18 +16,18 @@ import javax.swing.BoxLayout;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
-import static main.style.SystemStyle.BACKGROUND;
-import static main.style.SystemStyle.BGCOLOR1;
-import static main.style.SystemStyle.BGCOLOR2;
-import static main.style.SystemStyle.BODYPLAIN;
-import static main.style.SystemStyle.FORM_WIDTH;
-import static main.style.SystemStyle.INFO_GRADIENT_BOTTOM;
-import static main.style.SystemStyle.INFO_GRADIENT_TOP;
-import static main.style.SystemStyle.MUTED_TEXT;
-import static main.style.SystemStyle.PRIMARY;
-import static main.style.SystemStyle.TITLEBOLD;
-import static main.style.SystemStyle.WHITE;
-import static main.style.SystemStyle.createTransparentPanel;
+import static main.ui.style.SystemStyle.BACKGROUND;
+import static main.ui.style.SystemStyle.BGCOLOR1;
+import static main.ui.style.SystemStyle.BGCOLOR2;
+import static main.ui.style.SystemStyle.BODYPLAIN;
+import static main.ui.style.SystemStyle.FORM_WIDTH;
+import static main.ui.style.SystemStyle.INFO_GRADIENT_BOTTOM;
+import static main.ui.style.SystemStyle.INFO_GRADIENT_TOP;
+import static main.ui.style.SystemStyle.MUTED_TEXT;
+import static main.ui.style.SystemStyle.PRIMARY;
+import static main.ui.style.SystemStyle.TITLEBOLD;
+import static main.ui.style.SystemStyle.WHITE;
+import static main.ui.style.SystemStyle.createTransparentPanel;
 
 public class AuthLayout extends JPanel {
 

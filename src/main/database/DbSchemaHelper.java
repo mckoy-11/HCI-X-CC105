@@ -42,6 +42,8 @@ public final class DbSchemaHelper {
 
     /**
      * Migrates the database from the old denormalized schema to the new normalized schema
+     * @param conn
+     * @throws java.sql.SQLException
      */
     public static void migrateToNormalizedSchema(Connection conn) throws SQLException {
         System.out.println("Checking database schema...");

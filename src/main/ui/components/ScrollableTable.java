@@ -4,7 +4,7 @@ import javax.swing.*;
 import javax.swing.table.*;
 import java.awt.*;
 import main.model.PopupItem;
-import static main.style.SystemStyle.*;
+import static main.ui.style.SystemStyle.*;
 
 /**
  * ScrollableTable is a reusable Swing component that encapsulates a JTable
